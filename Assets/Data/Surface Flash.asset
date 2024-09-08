@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0fab5b3fc36103d49b14009542f7c684, type: 3}
+  m_Name: Surface Flash
+  m_EditorClassIdentifier: 
+  <BulletHitParticle>k__BackingField:
+    _asset: {fileID: 8307705410877626090, guid: 31bedded0691e3b4b89375246afdacfb,
+      type: 3}
+  <BulletHitSound>k__BackingField: {fileID: 11400000, guid: 9913250ce87850c4893247c648883d2c,
+    type: 2}

@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: afa0585ed8e1a674e8cb80ae280d9e4b, type: 3}
+  m_Name: Shotgun
+  m_EditorClassIdentifier: 
+  <DisplayName>k__BackingField: Shotgun
+  <Description>k__BackingField: Something interesting about Shotgun weapon
+  <Sprite>k__BackingField: {fileID: 21300000, guid: fa6ec3af13e7242498f45975987b239a,
+    type: 3}
+  <StackSize>k__BackingField: 1
+  _tags: []
+  <WeaponModel>k__BackingField:
+    _asset: {fileID: 8688844734213380192, guid: 20d2144512ab9c746943a177c149b9df,
+      type: 3}
+  <Cooldown>k__BackingField: 0.5
+  <ShootMask>k__BackingField:
+    serializedVersion: 2
+    m_Bits: 4097
+  <AmmoItem>k__BackingField: {fileID: 11400000, guid: ed6014256d9de8c4882aa2c75e2e7bb9,
+    type: 2}
+  <MaxAmmo>k__BackingField: 2
+  <VerticalRecoil>k__BackingField:
+    <Min>k__BackingField: 15
+    <Max>k__BackingField: 20
+  <HorizontalRecoil>k__BackingField:
+    <Min>k__BackingField: 5
+    <Max>k__BackingField: 7
+  <CameraShake>k__BackingField: 6
+  <BulletsPerShotCount>k__BackingField: 15
+  <BulletDamage>k__BackingField:
+    <Min>k__BackingField: 10
+    <Max>k__BackingField: 12
+  <VerticalBulletSpread>k__BackingField: 5
+  <HorizontalBulletSpread>k__BackingField: 11
+  <HitVisualizer>k__BackingField: {fileID: 11400000, guid: 6478f9692516a374d858fc328a05883b,
+    type: 2}
