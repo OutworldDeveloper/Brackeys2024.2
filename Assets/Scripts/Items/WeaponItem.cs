@@ -54,7 +54,7 @@ public class WeaponItem : Item
         }
 
         HitVisualizer.Visualize(bulletHits.ToArray()); // TODO: Fix
-        AISoundEvents.Create(null, from.position, 10f);
+        AISoundEvents.Fire(null, from.position, 10f);
     }
 
     private BulletHit ProcessHit(Vector3 direction, RaycastHit hit)

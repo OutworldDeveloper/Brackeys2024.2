@@ -15,22 +15,17 @@ public class Zombie : MonoBehaviour
         None,
         Attack,
         Roar,
-        Hurt,
-        HurtBadly,
-        Afk,
         Jump,
         PostJumpDelay,
-        Sleeping,
-        WakingUp,
     }
 
     public enum ThinkState
     {
-        NoTarget,
+        CheckRooms,
         InvestigateSound,
-        Follow, // Slowly following player (if too far, sprint)
-        StupidApproach, // When close enough, start walking around randomly
-        Engage, // Rush for attack
+        Follow,
+        Engage,
+        ReturnHome,
     }
 
     [SerializeField] private float _speed = 2f;
@@ -58,9 +53,6 @@ public class Zombie : MonoBehaviour
 
     [SerializeField] private AnimationCurve _jumpCurve;
 
-    [SerializeField] private bool _startSleeping;
-    [SerializeField] private bool _wakesOnDamage;
-
     private NavMeshAgent _agent;
     private PlayerCharacter _target;
 
@@ -71,19 +63,16 @@ public class Zombie : MonoBehaviour
 
     private TimeSince _timeSinceLastThink = TimeSince.Never;
 
-    private float _health = 100f;
-
     private TimeSince _timeSinceLastSprint = TimeSince.Never;
     private bool _isSprinting;
 
     private TimeSince _timeSinceLastDirectionChange = TimeSince.Never;
 
+    private TimeSince _timeSinceTargetLost;
+
     private EnumState<ThinkState> _thinkState = new EnumState<ThinkState>();
     private EnumCall<ThinkState> _thinkCall;
 
-    private bool _isSleeping;
-
-    public bool IsDead => _health <= 0f;
     public bool HasTarget => _target != null;
     private float TargetDistance => Vector3.Distance(transform.position, _target.transform.position);
     private float TargetAngle => FlatVector.Angle(transform.forward.Flat(), (_target.transform.position - transform.position).normalized.Flat());
@@ -93,34 +82,23 @@ public class Zombie : MonoBehaviour
         _agent = GetComponent<NavMeshAgent>();
         _agent.updateRotation = false;
 
-        foreach (var hitbox in GetComponentsInChildren<Hitbox>())
-        {
-            hitbox.Damaged += OnHitboxDamaged;
-        }
-
         _currentAction.StateStarted.
             AddCallback(Action.None, OnNoneActionStart).
             AddCallback(Action.Attack, OnAttackActionStart).
-            AddCallback(Action.Hurt, OnHurtActionStart).
             AddCallback(Action.Roar, OnRoarActionStart).
-            AddCallback(Action.Jump, OnJumpActionStart).
-            AddCallback(Action.Sleeping, OnSleepingActionStart).
-            AddCallback(Action.WakingUp, OnWakingUpActionStart);
+            AddCallback(Action.Jump, OnJumpActionStart);
 
         _updateCall = _currentAction.AddCall().
             AddCallback(Action.None, OnNoneActionUpdate).
             AddCallback(Action.Attack, OnAttackActionUpdate).
-            AddCallback(Action.Hurt, OnHurtActionUpdate).
             AddCallback(Action.Roar, OnRoarActionUpdate).
             AddCallback(Action.Jump, OnJumpActionUpdate).
-            AddCallback(Action.PostJumpDelay, OnPostJumpDelayActionUpdate).
-            AddCallback(Action.WakingUp, OnWakingUpActionUpdate);
+            AddCallback(Action.PostJumpDelay, OnPostJumpDelayActionUpdate);
 
         _thinkCall = _thinkState.AddCall().
-            AddCallback(ThinkState.NoTarget, OnNoTargetThink).
+            AddCallback(ThinkState.CheckRooms, OnCheckRoomsThink).
             AddCallback(ThinkState.InvestigateSound, OnInvestigateSoundThink).
             AddCallback(ThinkState.Follow, OnFollowThink).
-            AddCallback(ThinkState.StupidApproach, OnStupidApproachThink).
             AddCallback(ThinkState.Engage, OnEngageThink);
 
         _thinkState.StateEnded.
@@ -129,20 +107,7 @@ public class Zombie : MonoBehaviour
         _soundsSensor.Perceived += OnSoundPerceived;
     }
 
-    private void Start()
-    {
-        if (IsDead == true)
-        {
-            SetDead();
-        }
-        else
-        {
-            if (_isSleeping == true)
-            {
-                _currentAction.Set(Action.Sleeping);
-            }
-        }
-    }
+    private void Start() { }
 
     public void SetTarget(PlayerCharacter target)
     {
@@ -150,61 +115,13 @@ public class Zombie : MonoBehaviour
         _thinkState.Set(ThinkState.Follow);
     }
 
-    private void OnHitboxDamaged(Hitbox hitbox, float damage)
-    {
-        Notification.ShowDebug($"Hit {hitbox.HitboxType}");
-
-        float damageMultiplier = 
-            hitbox.HitboxType == HitboxType.Head ? 2f : hitbox.HitboxType == HitboxType.Body ? 1f : 0.5f;
-
-        ApplyDamage(damage * damageMultiplier);
-    }
-
-    public void ApplyDamage(float damage)
-    {
-        if (IsDead == true)
-            return;
-
-        _health -= damage;
-
-        if (IsDead == false)
-        {
-            bool shouldStagger =
-                _currentAction.GetTimeSinceLast(Action.Hurt) > 0.4f &&
-                damage > 10f &&
-                _currentAction != Action.Sleeping;
-
-            if (shouldStagger == true)
-            {
-                _currentAction.Set(Action.Hurt);
-            }
-
-            if (_currentAction == Action.Sleeping && _wakesOnDamage == true)
-            {
-                _currentAction.Set(Action.WakingUp);
-            }
-        }
-        else
-        {
-            SetDead();
-            _animator.CrossFade("dying", 0.2f);
-        }
-    }
-
     private void OnSoundPerceived(SoundEvent soundEvent)
     {
-        if (_currentAction == Action.Sleeping)
-        {
-            _currentAction.Set(Action.WakingUp); 
-        }
-
-        if (_thinkState != ThinkState.NoTarget)
+        if (_thinkState == ThinkState.Follow || _thinkState == ThinkState.Engage || _thinkState == ThinkState.ReturnHome)
             return;
 
         _thinkState.Set(ThinkState.InvestigateSound);
     }
-
-    private TimeSince _timeSinceTargetLost;
 
     private void Update()
     {
@@ -218,23 +135,20 @@ public class Zombie : MonoBehaviour
             if (_timeSinceTargetLost > 5f)
             {
                 _target = null;
-                _thinkState.Set(ThinkState.NoTarget);
+                _thinkState.Set(ThinkState.CheckRooms);
             }
         }
 
-        float targetWeight = _target == null ? 0f : IsDead == true ? 0f : _isSprinting == true ? 0f : 1f;
-        _headTargetingConstraint.weight = Mathf.Lerp(_headTargetingConstraint.weight, targetWeight, 4f * Time.deltaTime);
-        _bodyTargetingConstraint.weight = Mathf.Lerp(_bodyTargetingConstraint.weight, targetWeight * 0.45f, 4f * Time.deltaTime);
-
-        if (IsDead == true)
-            return;
+        //float targetWeight = _target == null ? 0f : _isSprinting == true ? 0f : 1f;
+        //_headTargetingConstraint.weight = Mathf.Lerp(_headTargetingConstraint.weight, targetWeight, 4f * Time.deltaTime);
+        //_bodyTargetingConstraint.weight = Mathf.Lerp(_bodyTargetingConstraint.weight, targetWeight * 0.45f, 4f * Time.deltaTime);
 
         //
         Vector3 targetLookPosition = _target != null ? 
             _target.transform.position + Vector3.up * 1.75f : 
             transform.position + Vector3.up * 1.75f + Vector3.forward;
 
-        _lookTarget.transform.position = Vector3.Lerp(_lookTarget.transform.position, targetLookPosition, 3f * Time.deltaTime);
+        //_lookTarget.transform.position = Vector3.Lerp(_lookTarget.transform.position, targetLookPosition, 3f * Time.deltaTime);
         //
 
         _updateCall.Execute();
@@ -251,7 +165,7 @@ public class Zombie : MonoBehaviour
         _thinkCall.Execute();
     }
 
-    private void OnNoTargetThink()
+    private void OnCheckRoomsThink()
     {
         TryFindTargetAndStartChase();
     }
@@ -268,7 +182,7 @@ public class Zombie : MonoBehaviour
         }
         else
         {
-            _thinkState.Set(ThinkState.NoTarget);
+            _thinkState.Set(ThinkState.CheckRooms);
         }
     }
 
@@ -280,68 +194,8 @@ public class Zombie : MonoBehaviour
         if (TryEngage() == true)
             return;
 
-        if (TargetDistance < 4.0f)
-        {
-            _thinkState.Set(ThinkState.StupidApproach);
-            return;
-        }
-
         _agent.stoppingDistance = 1f;
         _agent.SetDestination(_target.transform.position);
-    }
-
-    private void OnStupidApproachThink()
-    {
-        if (TryAttackIfMakesSense() == true)
-            return;
-
-        if (TryEngage() == true)
-            return;
-
-        if (TargetDistance > 5.5f)
-        {
-            _thinkState.Set(ThinkState.Follow);
-            return;
-        }
-
-        if (_timeSinceLastDirectionChange < 0.75f)
-            return;
-
-        _timeSinceLastDirectionChange = TimeSince.Now();
-
-        int rays = 16;
-
-        Vector3 bestSpot = transform.position;
-        float bestScore = float.NegativeInfinity;
-
-        for (int i = 0; i < rays; i++)
-        {
-            Vector3 rayDirection = Quaternion.AngleAxis(i * (360 / 16), Vector3.up) * transform.forward;
-
-            NavMesh.Raycast(transform.position, transform.position + rayDirection * 3f, out NavMeshHit hit, _agent.areaMask);
-
-            Debug.DrawRay(transform.position, rayDirection * hit.distance, hit.hit ? Color.red : Color.green, 0.1f);
-
-            float score = hit.distance / 3f;
-
-            score +=
-                (Vector3.Dot(rayDirection, (_target.transform.position - transform.position).normalized) + 1f) / 2
-                * _toPlayerMltp;
-
-            score +=
-                (Vector3.Dot(rayDirection, transform.forward) + 1f) / 2
-                * _forwardMltp;
-
-            score += Randomize.Float(0.0f, 0.4f); // Not sure
-
-            if (score > bestScore)
-            {
-                bestScore = score;
-                bestSpot = transform.position + rayDirection * hit.distance;
-            }
-        }
-
-        _agent.SetDestination(bestSpot);
     }
 
     private void OnEngageThink()
@@ -371,12 +225,6 @@ public class Zombie : MonoBehaviour
                 _isSprinting = false;
         }
 
-        // Should it stay?
-        if (_thinkState.TimeSinceLastChange > 8f)
-        {
-            _thinkState.Set(ThinkState.StupidApproach);
-        }
-
         Try.Any(TryAttackIfMakesSense, TryJump);
     }
 
@@ -387,15 +235,14 @@ public class Zombie : MonoBehaviour
 
     private bool TryEngage()
     {
-        if (Randomize.Chance(25) == true && ZombieManager.Instance.TryTakeEngageCoin(this, 5f) == true)
+        if (Randomize.Chance(25) == true)
         {
             _thinkState.Set(ThinkState.Engage);
             return true;
         }
 
         if (TargetDistance < 3.5f &&
-            _thinkState.TimeSinceLastChange > 0.4f &&
-            ZombieManager.Instance.TryTakeEngageCoin(this, 5f) == true)
+            _thinkState.TimeSinceLastChange > 0.4f)
         {
             _thinkState.Set(ThinkState.Engage);
             return true;
@@ -408,24 +255,14 @@ public class Zombie : MonoBehaviour
     {
         if (TargetDistance < _attackDistance)
         {
-            if (ZombieManager.Instance.TryTakeAttackCoin(this, 1.5f))
-            {
-                _currentAction.Set(Action.Attack);
-                return true;
-            }
-
-            return false;
+            _currentAction.Set(Action.Attack);
+            return true;
         }
 
         if (TargetDistance < 3.5f && Randomize.Chance(35))
         {
-            if (ZombieManager.Instance.TryTakeAttackCoin(this, 1.5f))
-            {
                 _currentAction.Set(Action.Attack);
-                return true;
-            }
-
-            return false;
+            return true;
         }
 
         return false;
@@ -436,9 +273,6 @@ public class Zombie : MonoBehaviour
     private bool TryJump()
     {
         if (Randomize.Chance(20) == false)
-            return false;
-
-        if (ZombieManager.Instance.TryTakeJumpCoin(this) == false)
             return false;
 
         int rays = 16;
@@ -553,7 +387,6 @@ public class Zombie : MonoBehaviour
         if (targetDistance > _attackLandDistance)
             return;
 
-        _target.ApplyModifier(new AttackedByZombieModifier(), 0.55f);
         _target.ApplyDamage(1f, (_target.transform.position - transform.position).normalized);
 
         _hitSound.Play(_audioSource);
@@ -576,8 +409,6 @@ public class Zombie : MonoBehaviour
     {
         _animator.Play("roar");
         _roarSound.Play(_audioSource);
-
-        ZombieManager.Instance.NotifyRoar(this);
     }
 
     private void OnRoarActionUpdate()
@@ -668,25 +499,16 @@ public class Zombie : MonoBehaviour
 
     private bool CanMove()
     {
-        return IsDead == false && _currentAction.Current == Action.None;
+        return _currentAction.Current == Action.None;
     }
 
     private float GetSpeed()
     {
-        if (_thinkState == ThinkState.StupidApproach || 
-            _thinkState == ThinkState.InvestigateSound || 
+        if (_thinkState == ThinkState.InvestigateSound || 
             _thinkState == ThinkState.Follow)
-            return 0.75f; // костыль
+            return 0.75f;
 
         return _isSprinting ? 5f : _speed;
-    }
-
-    private void SetDead()
-    {
-        _health = 0f;
-        _animator.Play("dead");
-        _agent.enabled = false;
-        _playerBlocker.enabled = false;
     }
 
     private void OnDrawGizmos()
@@ -717,120 +539,6 @@ public abstract class LazySingleton<T> : MonoBehaviour where T : MonoBehaviour
     }
 
 }
-
-public sealed class ZombieManager : LazySingleton<ZombieManager>
-{
-
-    private AttackCoin _engageCoin = new AttackCoin();
-    private AttackCoin _attackCoin = new AttackCoin();
-    private AttackCoin _jumpCoin = new AttackCoin();
-
-    public void NotifyRoar(Zombie zombie) { }
-
-    public bool TryTakeAttackCoin(Zombie zombie, float duration)
-    {
-        return TryTakeCoin(_attackCoin, duration);
-    }
-
-    public bool TryTakeEngageCoin(Zombie zombie, float duration)
-    {
-        return TryTakeCoin(_engageCoin, duration);
-    }
-
-    public bool TryTakeJumpCoin(Zombie zombie)
-    {
-        return TryTakeCoin(_jumpCoin, 6f);
-    }
-
-    private bool TryTakeCoin(AttackCoin coin, float duration)
-    {
-        if (coin.IsAvaliable == false)
-            return false;
-
-        coin.DisableFor(duration);
-        return true;
-    }
-
-    public sealed class AttackCoin
-    {
-
-        private TimeUntil _timeUntilReady = new TimeUntil(float.NegativeInfinity);
-
-        public bool IsAvaliable => _timeUntilReady < 0f;
-
-        public void DisableFor(float duration)
-        {
-            _timeUntilReady = new TimeUntil(Time.time + duration);
-        }
-
-    }
-
-}
-
-public sealed class AttackedByZombieModifier : CharacterModifier
-{
-
-    public override bool CanJump()
-    {
-        return false;
-    }
-
-    public override float GetSpeedMultiplier()
-    {
-        return 0.45f;
-    }
-
-}
-
-public sealed class GrabbedByZombieModifier : CharacterModifier
-{
-
-    private readonly Zombie _zombie;
-    private readonly Vector3 _direction;
-    private readonly TimeUntil _timeUntilAllowRotation;
-
-    public GrabbedByZombieModifier(Zombie zombie, Vector3 direction, TimeUntil timeUntilAllowRotation)
-    {
-        _zombie = zombie;
-        _direction = direction;
-        _timeUntilAllowRotation = timeUntilAllowRotation;
-    }
-
-    public override bool CanCrouch()
-    {
-        return false;
-    }
-
-    public override bool CanJump()
-    {
-        return false;
-    }
-
-    public override bool CanInteract()
-    {
-        return false;
-    }
-
-    public override float GetSpeedMultiplier()
-    {
-        return 0.0f;
-    }
-
-    public override bool OverrideLookDirection(out Vector3 direction)
-    {
-        if (_timeUntilAllowRotation < 0)
-        {
-            direction = default;
-            return false;
-        }
-
-        direction = _direction;
-        return true;
-    }
-
-}
-
-public sealed class ZombieGrabCooldownModifier : CharacterModifier { }
 
 public static class Try
 {

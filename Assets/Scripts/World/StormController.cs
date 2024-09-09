@@ -6,7 +6,8 @@ public sealed class StormController : MonoBehaviour
 {
 
     [SerializeField] private Storm[] _storms;
-    [SerializeField] private MinMax<float> _stormDelay = new(30, 50);
+    [SerializeField] private MinMax<float> _firstStormDelay = new(10, 10);
+    [SerializeField] private MinMax<float> _stormDelay = new(40, 60);
 
     public TimeUntil _timeUntilNextStorm;
 
@@ -14,7 +15,7 @@ public sealed class StormController : MonoBehaviour
 
     private void Start()
     {
-        //_timeUntilNextStorm = new TimeUntil(Time.time + Randomize.Float(_stormDelay));
+        _timeUntilNextStorm = new TimeUntil(Time.time + Randomize.Float(_firstStormDelay));
     }
 
     private void Update()
@@ -23,6 +24,7 @@ public sealed class StormController : MonoBehaviour
         {
             if (_activeStorm.UpdateStorm())
             {
+                Notification.ShowDebug($"Storm {_activeStorm.GetType().Name} completed!", 4f);
                 _activeStorm = null;
                 _timeUntilNextStorm = new TimeUntil(Time.time + Randomize.Float(_stormDelay));
             }
@@ -35,7 +37,7 @@ public sealed class StormController : MonoBehaviour
 
         _activeStorm = _storms[Randomize.Index(_storms.Length)];
         _activeStorm.BeginStorm();
-        Notification.ShowDebug($"Storm {_activeStorm} started!", 4f);
+        Notification.ShowDebug($"Storm {_activeStorm.GetType().Name} started!", 4f);
     }
 
 }

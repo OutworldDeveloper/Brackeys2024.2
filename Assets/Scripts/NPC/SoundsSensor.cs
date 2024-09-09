@@ -29,11 +29,11 @@ public class SoundsSensor : MonoBehaviour
         Vector3 pointB = transform.position + Vector3.up;
         LayerMask layerMask = LayerMask.NameToLayer("Default");
 
-        if (Physics.Linecast(pointA, pointB) == true)
-        {
-            Debug.DrawLine(pointA, pointB, Color.red, 5f);
-            return;
-        }
+        //if (Physics.Linecast(pointA, pointB) == true)
+        //{
+        //    Debug.DrawLine(pointA, pointB, Color.red, 5f);
+        //    return;
+        //}
 
         LastEvent = soundEvent;
         Perceived?.Invoke(soundEvent);

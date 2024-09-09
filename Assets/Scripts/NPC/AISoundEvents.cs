@@ -8,7 +8,7 @@ public class AISoundEvents : MonoBehaviour
 
     public static event Action<SoundEvent> Event;
 
-    public static void Create(GameObject instigator, Vector3 position, float radius)
+    public static void Fire(GameObject instigator, Vector3 position, float radius)
     {
         Event?.Invoke(new SoundEvent(instigator, position, radius));
     }

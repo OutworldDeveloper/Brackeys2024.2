@@ -32,6 +32,10 @@ public sealed class PlayerCharacter : Pawn
     [SerializeField] private float _kneeOffset = 0.75f;
     [SerializeField] private float _swimPointOffset = 1.5f;
 
+    [SerializeField] private Sound _stepSound;
+    [SerializeField] private Sound _stepSoundCrouching;
+    [SerializeField] private AudioSource _stepSource;
+
     private CharacterController _controller;
     private Vector3 _velocityXZ;
     private float _velocityY;
@@ -58,6 +62,7 @@ public sealed class PlayerCharacter : Pawn
 
     // For steps
     private Vector3 _delayedVelocity;
+    private float _stepsTimer;
 
     private float _shakeStrenght;
 
@@ -114,12 +119,11 @@ public sealed class PlayerCharacter : Pawn
         };
     }
 
-    private float _stepsTimer;
-    [SerializeField] private Sound _stepSound;
-    [SerializeField] private AudioSource _stepSource;
-
     private void Update()
     {
+        // Used for steps and animations
+        _delayedVelocity = Vector3.Lerp(_delayedVelocity, _velocityXZ, Time.deltaTime * 10f);
+
         // Camera shake
         _shakeStrenght = Mathf.Lerp(_shakeStrenght, 0f, Time.deltaTime * 10f);
 
@@ -129,8 +133,14 @@ public sealed class PlayerCharacter : Pawn
         if (_stepsTimer > 1f)
         {
             _stepsTimer = 0f;
-            if (_controller.isGrounded == true)
-                _stepSound.Play(_stepSource);
+
+            if (_controller.isGrounded == true && IsInWater() == false)
+            {
+                var stepSound = _isCrouching ? _stepSoundCrouching : _stepSound;
+                stepSound.Play(_stepSource);
+                float stepSoundRange = _isCrouching ? 4f : 10f;
+                AISoundEvents.Fire(gameObject, transform.position + Vector3.up, stepSoundRange);
+            }
         }
 
         UpdateModifiers();
@@ -209,6 +219,7 @@ public sealed class PlayerCharacter : Pawn
         Died?.Invoke();
         GetComponent<Animator>().SetBool("dead", true);
         _modifiers.Clear();
+        //ScreenFade.FadeOut();
     }
 
     public T ApplyModifier<T>(T modifier, float duration) where T : CharacterModifier
@@ -259,8 +270,8 @@ public sealed class PlayerCharacter : Pawn
     {
         var playerInput = new PlayerInput();
 
-        playerInput.MouseX = Input.GetAxisRaw("Mouse X") * _mouseSensitivity.Value;
-        playerInput.MouseY = Input.GetAxisRaw("Mouse Y") * _mouseSensitivity.Value;
+        playerInput.MouseX = RemoveFlicks(Input.GetAxisRaw("Mouse X")) * _mouseSensitivity.Value;
+        playerInput.MouseY = RemoveFlicks(Input.GetAxisRaw("Mouse Y")) * _mouseSensitivity.Value;
 
         playerInput.Direction = new FlatVector()
         {
@@ -488,6 +499,17 @@ public sealed class PlayerCharacter : Pawn
     private float GetRemappedPerlinNoise1D(float timeMultiplier, float offset)
     {
         return Mathf.PerlinNoise1D(Time.time * timeMultiplier + offset);
+    }
+
+    private const float WEBGL_ANTI_FLICKS_THRESHOLD = 90f;
+    private float prevDeltaX;
+
+    private float RemoveFlicks(float currentDeltaX)
+    {
+        if (Mathf.Abs(currentDeltaX - prevDeltaX) > WEBGL_ANTI_FLICKS_THRESHOLD)
+            return prevDeltaX;
+        prevDeltaX = currentDeltaX;
+        return currentDeltaX;
     }
 
     private struct PlayerInput
