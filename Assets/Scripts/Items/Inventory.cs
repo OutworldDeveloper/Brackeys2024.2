@@ -6,72 +6,35 @@ using UnityEngine;
 public class Inventory : MonoBehaviour
 {
 
-    public event Action Changed;
+    public event Action<Item> ItemAdded;
+    public event Action<Item> ItemRemoved;
 
-    [SerializeField] private int _slotsCount;
+    private readonly List<Item> _items = new List<Item>();
 
-    private ItemSlot[] _slots;
+    public Item[] Items => _items.ToArray();
+    public bool IsEmpty => _items.Count == 0;
 
-    public int SlotsCount => _slots.Length;
-    public ItemSlot this[int index] => _slots[index];
-
-    private void Awake()
+    public bool HasItem(Item item)
     {
-        _slots = new ItemSlot[_slotsCount];
-
-        for (int i = 0; i < _slots.Length; i++)
+        foreach (var checkItem in _items)
         {
-            _slots[i] = CreateSlot(i);
-            _slots[i].Changed += OnSlotChanged;
-        }
-    }
-
-    protected virtual ItemSlot CreateSlot(int index)
-    {
-        return new ItemSlot(this, $"Inventory{index}");
-    }
-
-    private void OnSlotChanged(ItemSlot slot)
-    {
-        Changed?.Invoke();
-    }
-
-    public bool CanAdd(ItemStack stack)
-    {
-        foreach (var slot in _slots)
-        {
-            if (slot.CanAdd(stack) == true)
+            if (checkItem == item)
                 return true;
         }
 
         return false;
     }
 
-    public bool TryAdd(ItemStack stack)
+    public void AddItem(Item item)
     {
-        foreach (var slot in _slots)
-        {
-            if (slot.TryAdd(stack) == true)
-                return true;
-        }
-    
-        return false;
+        _items.Add(item);
+        ItemAdded?.Invoke(item);
     }
 
-    public int GetAmountOf(Item item)
+    public void RemoveItem(Item item)
     {
-        int count = 0;
-
-        foreach (var slot in _slots)
-        {
-            if (slot.IsEmpty == true)
-                continue;
-
-            if (slot.Stack.Item == item)
-                count += slot.Stack.Count;
-        }
-
-        return count;
+        _items.Remove(item);
+        ItemRemoved?.Invoke(item);
     }
 
 }

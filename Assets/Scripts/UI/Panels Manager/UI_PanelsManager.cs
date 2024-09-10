@@ -6,6 +6,8 @@ using UnityEngine;
 public class UI_PanelsManager : MonoBehaviour
 {
 
+	public event Action Changed;
+
 	[SerializeField] private Transform _backgroundHidder;
 
     private readonly List<UI_Panel> _panelsStack = new List<UI_Panel>();
@@ -22,7 +24,7 @@ public class UI_PanelsManager : MonoBehaviour
 			return false;
 
 		RemoveAndDestroy(Active);
-		return true;
+        return true;
 	}
 
 	public T InstantiateAndOpenFrom<T>(Prefab<T> prefab) where T : UI_Panel
@@ -32,7 +34,8 @@ public class UI_PanelsManager : MonoBehaviour
 		_panelsStack.Add(newPanel);
 		newPanel.OnAddedToStack(this);
 		RefreshView();
-		return newPanel;
+        Changed?.Invoke();
+        return newPanel;
 	}
 
     public void RemoveAndDestroy(UI_Panel panel)
@@ -40,7 +43,8 @@ public class UI_PanelsManager : MonoBehaviour
 		_panelsStack.Remove(panel);
 		Destroy(panel.gameObject);
 		RefreshView();
-	}
+        Changed?.Invoke();
+    }
 
     private void RefreshView()
     {

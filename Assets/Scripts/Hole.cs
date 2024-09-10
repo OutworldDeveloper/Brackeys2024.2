@@ -4,8 +4,8 @@ using UnityEngine;
 public sealed class Hole : MonoBehaviour
 {
 
-    [SerializeField] private ItemTag _ropeItemTag;
-    [SerializeField] private ItemTag _hookItemTag;
+    [SerializeField] private Item _ropeItem;
+    [SerializeField] private Item _hookItemTag;
     [SerializeField] private Item _reward;
     [SerializeField] private Animator _animator;
     [SerializeField] private float _animationDuration;

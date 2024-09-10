@@ -11,15 +11,15 @@ public sealed class ItemAddedSoundEffect : MonoBehaviour
 
     private void OnEnable()
     {
-        //_playerCharacter.Inventory.ItemAdded += OnItemAdded;
+        _playerCharacter.Inventory.ItemAdded += OnItemAdded;
     }
 
     private void OnDisable()
     {
-        //_playerCharacter.Inventory.ItemAdded -= OnItemAdded;
+        _playerCharacter.Inventory.ItemAdded -= OnItemAdded;
     }
 
-    private void OnItemAdded(ItemStack item)
+    private void OnItemAdded(Item item)
     {
         var audioSource = GetComponent<AudioSource>();
 

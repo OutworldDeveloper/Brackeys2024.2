@@ -11,8 +11,6 @@ GameObject:
   - component: {fileID: 5139447908683837593}
   - component: {fileID: 5139447908683837604}
   - component: {fileID: 5139447908683837605}
-  - component: {fileID: 5018186147859474630}
-  - component: {fileID: -1361738573429404790}
   m_Layer: 6
   m_Name: Key Electric Box
   m_TagString: Untagged
@@ -71,35 +69,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _item: {fileID: 11400000, guid: 67bcf4f0cc3634543a3c02934390d06b, type: 2}
   _amount: 1
---- !u!114 &5018186147859474630
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5139447908683837606}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ba35cd1c90a4c2f4a94301d23ac62f4b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _saveableComponents:
-  - Component: {fileID: 5139447908683837605}
-    Guid: 066ab2b3-c344-4dc6-a79d-6202c7b1fbdb
---- !u!114 &-1361738573429404790
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5139447908683837606}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 666a2a3582e3e4a4fb8268c9b9d3edeb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _hasSceneGuid: 0
-  _sceneGuid: 
 --- !u!1001 &5139447908540352632
 PrefabInstance:
   m_ObjectHideFlags: 0

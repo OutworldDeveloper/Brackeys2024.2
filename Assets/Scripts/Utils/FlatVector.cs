@@ -134,6 +134,11 @@ public struct FlatVector
         z = normalized.z;
     }
 
+    public Vector3 WithY(float y)
+    {
+        return new Vector3(x, y, z);
+    }
+
     public override bool Equals(object obj) => obj is FlatVector other && x == other.x && z == other.z;
 
     public override int GetHashCode() => Vector3.GetHashCode();

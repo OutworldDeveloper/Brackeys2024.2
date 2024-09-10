@@ -6,7 +6,7 @@ using UnityEngine;
 public sealed class FridgeChains : DoorBlocker
 {
 
-    [SerializeField] private ItemTag _keyTag;
+    [SerializeField] private Item _key;
     [SerializeField] private Sound _openingAttemptSound;
     [SerializeField] private Sound _unlockSound;
     [SerializeField] private AudioSource _audioSource;

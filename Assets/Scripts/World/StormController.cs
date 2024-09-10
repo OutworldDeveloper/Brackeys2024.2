@@ -56,9 +56,3 @@ public abstract class Storm : MonoBehaviour
     public abstract bool UpdateStorm();
 
 }
-
-public abstract class StormState
-{
-    public abstract bool Update();
-
-}

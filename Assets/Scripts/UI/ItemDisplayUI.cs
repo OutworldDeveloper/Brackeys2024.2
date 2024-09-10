@@ -1,17 +1,28 @@
-﻿using TMPro;
+﻿using System;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 public sealed class ItemDisplayUI : MonoBehaviour
 {
 
+    public event Action<Item> Selected;
+
     [SerializeField] private Image _image;
     [SerializeField] private TextMeshProUGUI _label;
 
-    public void Init(ItemStack stack)
+    private Item _item;
+
+    public void Init(Item item)
     {
-        _image.sprite = stack.Item.Sprite;
-        _label.text = stack.Item.DisplayName;
+        _item = item;
+        _image.sprite = item.Sprite;
+        _label.text = item.DisplayName;
+    }
+
+    public void Select()
+    {
+        Selected?.Invoke(_item);
     }
 
 }

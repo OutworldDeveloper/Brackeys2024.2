@@ -24,15 +24,12 @@ public sealed class ToggleDoorInteraction : Interaction
             return;
         }
 
-        if (_door.IsLocked == true)
+        if (_door.IsLocked == true && player.Inventory.IsEmpty == false)
         {
-            _door.TryOpen();
             player.Player.OpenItemSelection(new KeySelector(_door));
         }
-        else
-        {
-            _door.TryOpen();
-        }
+
+        _door.TryOpen();
     }
 
     private sealed class KeySelector : ItemSelector
@@ -45,18 +42,19 @@ public sealed class ToggleDoorInteraction : Interaction
             _door = door;
         }
 
-        public override bool CanAccept(IReadOnlyStack stack)
+        public override bool CanAccept(Item item)
         {
-            return stack.Item is KeyItem;
+            return item == _door.Key;
         }
 
-        public override void Select(ItemStack stack)
+        public override void Select(Inventory inventory, Item item)
         {
-            _door.TryUnlock(stack);
+            inventory.RemoveItem(item);
+            _door.TryUnlock(item);
             _door.TryOpen();
         }
 
-        public override string GetRejectionReason(IReadOnlyStack stack)
+        public override string GetRejectionReason(Item item)
         {
             return "Won't open";
         }

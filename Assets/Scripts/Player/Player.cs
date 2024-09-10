@@ -13,7 +13,6 @@ public sealed class Player : MonoBehaviour
     [SerializeField] private Camera _mainCamera;
     [SerializeField] private GameObject _hud;
     [SerializeField] private Prefab<UI_PauseMenu> _pauseMenu;
-    [SerializeField] private Prefab<UI_InventoryScreen> _inventoryScreen;
     [SerializeField] private Prefab<UI_Panel> _deathScreen;
     [SerializeField] private Prefab<UI_InventorySelectScreen> _itemSelectionScreen;
 
@@ -148,18 +147,10 @@ public sealed class Player : MonoBehaviour
         _currentState = state;
     }
 
-    public UI_InventoryScreen OpenInventory()
-    {
-        var inventoryScreen = _panels.InstantiateAndOpenFrom(_inventoryScreen);
-        inventoryScreen.SetTarget(_character);
-        return inventoryScreen;
-    }
-
     public UI_InventorySelectScreen OpenItemSelection(ItemSelector selector)
     {
         var selectionScreen = Panels.InstantiateAndOpenFrom(_itemSelectionScreen);
-        selectionScreen.SetTarget(_character);
-        selectionScreen.SetSelector(selector);
+        selectionScreen.Setup(_character.Inventory, selector);
         return selectionScreen;
     }
 

@@ -34,7 +34,7 @@ public sealed class Door : MonoBehaviour
     [SerializeField, TabGroup("Collision")] private float _collisionSynchTime;
     [SerializeField, TabGroup("Collision")] private Collider _collision;
 
-    [SerializeField, TabGroup("Extra")] private KeyItem _keyItem;
+    [SerializeField, TabGroup("Extra")] private Item _keyItem;
     [SerializeField, TabGroup("Extra")] private DoorBlocker[] _initialBlockers;
 
     private bool _isOpen;
@@ -53,6 +53,8 @@ public sealed class Door : MonoBehaviour
     public bool IsOpening => _isAnimating == true && _isOpen == false;
     public bool IsClosing => _isAnimating == true && _isOpen == true;
 
+    public Item Key => _keyItem;
+
     private void Start()
     {
         foreach (var blocker in _initialBlockers)
@@ -62,6 +64,8 @@ public sealed class Door : MonoBehaviour
 
         SetT(_isOpen ? 1f : 0f);
         SynchCollision();
+
+        _isLockedByKey = Key != null;
     }
 
     private void Update()
@@ -132,9 +136,9 @@ public sealed class Door : MonoBehaviour
         Closing?.Invoke();
     }
 
-    public bool TryUnlock(ItemStack stack)
+    public bool TryUnlock(Item item)
     {
-        if (stack.Item != _keyItem)
+        if (item != _keyItem)
             return false;
 
         _isLockedByKey = false;

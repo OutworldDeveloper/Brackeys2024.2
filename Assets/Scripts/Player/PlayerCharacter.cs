@@ -34,6 +34,7 @@ public sealed class PlayerCharacter : Pawn
 
     [SerializeField] private Sound _stepSound;
     [SerializeField] private Sound _stepSoundCrouching;
+    [SerializeField] private Sound _stepSoundWater;
     [SerializeField] private AudioSource _stepSource;
 
     private CharacterController _controller;
@@ -136,7 +137,7 @@ public sealed class PlayerCharacter : Pawn
 
             if (_controller.isGrounded == true && IsInWater() == false)
             {
-                var stepSound = _isCrouching ? _stepSoundCrouching : _stepSound;
+                var stepSound = IsFeetInWater() ? _stepSoundWater : _isCrouching ? _stepSoundCrouching : _stepSound;
                 stepSound.Play(_stepSource);
                 float stepSoundRange = _isCrouching ? 4f : 10f;
                 AISoundEvents.Fire(gameObject, transform.position + Vector3.up, stepSoundRange);
@@ -376,6 +377,7 @@ public sealed class PlayerCharacter : Pawn
     }
 
     private bool IsInWater() => Water.Level > transform.position.y + _swimPointOffset;
+    private bool IsFeetInWater() => Water.Level > transform.position.y + 0.15f;
 
     private void UpdateHealthRegeneration()
     {
