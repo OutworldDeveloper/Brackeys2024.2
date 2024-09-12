@@ -5,6 +5,7 @@ public sealed class MouseTrapInteraction : Interaction
 {
     public override string Text => "Interact";
 
+    [SerializeField] private VirtualCamera _camera;
     private MouseTrap _mouseTrap;
 
     private void Awake()
@@ -35,8 +36,8 @@ public sealed class MouseTrapInteraction : Interaction
 
         if (player.Inventory.IsEmpty == false)
             player.Player.OpenPanel(Panels.SelectionScreen).
-                Setup(player.Inventory, new CheeseSelector(_mouseTrap));
-            //(player.Player as Player)?.OpenItemSelection(new CheeseSelector(_mouseTrap));
+                Setup(player.Inventory, new CheeseSelector(_mouseTrap)).
+                SetVirtualCamera(_camera, CameraTransition.Move);
     }
 
     public sealed class CheeseSelector : ItemSelector

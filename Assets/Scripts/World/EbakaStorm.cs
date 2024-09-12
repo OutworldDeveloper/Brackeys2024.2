@@ -8,6 +8,8 @@ public sealed class EbakaStorm : Storm
     [SerializeField] private Transform[] _spawnPoints = Array.Empty<Transform>();
     [SerializeField] private PlayerCharacter _player;
     [SerializeField] private float _minDuration = 90f;
+    [SerializeField] private float _forcedRemovalDelay = 25f;
+    [SerializeField] private LightsController _lightsController;
 
     private Zombie _zombie;
     private bool _isFinished;
@@ -15,6 +17,7 @@ public sealed class EbakaStorm : Storm
     protected override void OnStormStarted()
     {
         _zombie = _zombieFactory.Spawn(SelectSpawnPoint(), Vector3.forward);
+        _lightsController.TurnOff();
     }
 
     public override bool UpdateStorm()
@@ -26,7 +29,22 @@ public sealed class EbakaStorm : Storm
             Notification.ShowDebug("Zombie escape!");
         }
 
-        return _zombie == null;
+        if (_zombie == null)
+        {
+            _lightsController.TurnOn();
+            return true;
+        }
+        else
+        {
+            if (TimeSinceStarted > _minDuration + _forcedRemovalDelay)
+            {
+                GameObject.Destroy(_zombie);
+                _lightsController.TurnOn();
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private Vector3 SelectSpawnPoint()

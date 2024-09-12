@@ -1,6 +1,5 @@
 ﻿using UnityEngine;
 
-[RequireComponent(typeof(Coffin))]
 public sealed class CoffinInteraction : Interaction
 {
 
@@ -10,7 +9,7 @@ public sealed class CoffinInteraction : Interaction
 
     public override void Perform(PlayerCharacter player)
     {
-        player.Player.OpenPanel(_dialoguePlayer).Setup(GetComponent<Coffin>());
+        player.Player.OpenPanel(_dialoguePlayer).Setup(GetComponentInParent<Coffin>());
     }
 
 }
