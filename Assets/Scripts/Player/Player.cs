@@ -4,247 +4,353 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
+using UnityEngine.TextCore.Text;
+using static UnityEngine.Rendering.DebugUI;
 
 [DefaultExecutionOrder(-1)]
-public sealed class Player : MonoBehaviour
+public sealed class Player : BasePlayer
 {
 
     [SerializeField] private PlayerCharacter _character;
-    [SerializeField] private Camera _mainCamera;
     [SerializeField] private GameObject _hud;
     [SerializeField] private Prefab<UI_PauseMenu> _pauseMenu;
     [SerializeField] private Prefab<UI_Panel> _deathScreen;
-    [SerializeField] private Prefab<UI_InventorySelectScreen> _itemSelectionScreen;
-
-    [SerializeField] private Volume _blurVolume;
-    [SerializeField] private UI_PanelsManager _panels;
-
-    [SerializeField] private AnimationCurve _cameraTransitionCurve;
-
-    [SerializeField] private RectTransform _hudParent;
-
-    private CameraState _currentState;
-    private CameraState _lastCameraState;
-
-    // Hud from other pawns (not character)
-    private Transform _currentHud;
-
-    public UI_PanelsManager Panels => _panels;
-    public PawnStack PawnStack { get; private set; }
 
     private void Awake()
     {
-        PawnStack = new PawnStack(this, _character);
-        PawnStack.ActivePawnChanged += OnActivePawnChanged;
         _character.Damaged += OnCharacterDamaged;
         _character.Died += OnCharacterDied;
     }
 
-    private void Update()
+    protected override GameplayState GetDefaultState()
     {
+        return _character;
+    }
+
+    protected override bool HandleEscapeButton()
+    {
+        if (base.HandleEscapeButton() == true)
+            return true;
+
+        OpenPanel(_pauseMenu);
+        return true;
+    }
+
+    private void OnCharacterDamaged()
+    {
+        //PawnStack.RemoveAll();
+    }
+
+    private void OnCharacterDied()
+    {
+        Delayed.Do(() => OpenPanel(_deathScreen), 1.75f);
+    }
+
+    protected override void UpdateState()
+    {
+        base.UpdateState();
+        bool showHud = IsStackEmpty == true && _character.IsDead == false;
+        _hud.SetActive(showHud);
+    }
+
+}
+
+public abstract class BasePlayer : MonoBehaviour
+{
+
+    public event Action<GameplayState> StateChanged;
+
+    [SerializeField] private Camera _mainCamera;
+    [SerializeField] private RectTransform _panelsStack;
+    [SerializeField] private Transform _backgroundHidder;
+    [SerializeField] private AnimationCurve _cameraTransitionCurve;
+
+    private GameplayState _defaultPawn;
+    private readonly List<GameplayState> _stack = new List<GameplayState>();
+    private CameraTransition _cameraTransition;
+
+    private CameraState _currentState;
+    private CameraState _lastCameraState;
+
+    private readonly List<UI_Panel> _panelsToAdd = new List<UI_Panel>();
+
+    public GameplayState ActiveGameplay => _stack.Count > 0 ? _stack[^1] : _defaultPawn;
+    public bool IsStackEmpty => _stack.Count == 0;
+    public TimeSince TimeSinceLastGameplayStateChange { get; private set; } = TimeSince.Never;
+
+    protected abstract GameplayState GetDefaultState();
+
+    protected virtual void Start()
+    {
+        _defaultPawn = GetDefaultState();
+        _defaultPawn.OnAddedToStack(this);
+        _defaultPawn.OnReceivePlayerControl();
+        _cameraTransition = _defaultPawn.GetCameraTransition();
+    }
+
+    protected virtual void Update()
+    {
+        for (int i = 0; i < _panelsToAdd.Count; i++)
+        {
+            Push(_panelsToAdd[i]);
+        }
+        _panelsToAdd.Clear();
+        //
+
         UpdateState();
 
         if (Input.GetKeyDown(KeyCode.Escape) == true || Input.GetKeyDown(KeyCode.Tab) == true)
             HandleEscapeButton();
 
-        if (_panels.HasActivePanel == true)
-        {
-            _panels.Active.InputUpdate();
-            return;
-        }
-
-        PawnStack.ActivePawn.InputTick();
+        ActiveGameplay.InputTick();
     }
 
-    private void LateUpdate()
+    protected virtual void LateUpdate()
     {
-        if (PawnStack.CameraTransition == CameraTransition.Fade && PawnStack.TimeSinceLastActivePawnChange < 0.2f)
+        if (_cameraTransition == CameraTransition.Fade && TimeSinceLastGameplayStateChange < 0.2f)
             return;
 
-        CameraState cameraState = PawnStack.ActivePawn.GetCameraState();
+        CameraState cameraState = GetFirstCamera().State;
 
-        if (PawnStack.CameraTransition == CameraTransition.Move && PawnStack.TimeSinceLastActivePawnChange < 0.4f)
+        if (_cameraTransition == CameraTransition.Move && TimeSinceLastGameplayStateChange < 0.4f)
         {
-            float t = PawnStack.TimeSinceLastActivePawnChange / 0.4f;
+            float t = TimeSinceLastGameplayStateChange / 0.4f;
             t = _cameraTransitionCurve.Evaluate(t);
             cameraState = CameraState.Lerp(_lastCameraState, cameraState, t);
         }
 
         ApplyCameraState(cameraState);
-
-        _blurVolume.enabled = PawnStack.ActivePawn.GetBlurStatus(out float targetBlurDistance);
-
-        // Blur
-        if (_blurVolume.profile.TryGet(out DepthOfField dof))
-        {
-            dof.focusDistance.Override(targetBlurDistance);
-        }
-    }
-
-    private void HandleEscapeButton()
-    {
-        if (_panels.HasActivePanel == true)
-        {
-            _panels.TryCloseActivePanel();
-            return;
-        }
-
-        if (PawnStack.IsStackEmpty == false && PawnStack.ActivePawn.CanRemoveAtWill() == true)
-        {
-            PawnStack.Remove(PawnStack.ActivePawn);
-        }
-        else
-        {
-            _panels.InstantiateAndOpenFrom(_pauseMenu);
-        }
-    }
-
-    private void OnActivePawnChanged(Pawn activePawn)
-    {
-        _lastCameraState = _currentState;
-
-        if (PawnStack.CameraTransition == CameraTransition.Fade)
-            ScreenFade.FadeOutFor(0.6f);
-
-        // Custom Huds
-        if (_currentHud != null)
-            Destroy(_currentHud.gameObject);
-
-        _currentHud = PawnStack.ActivePawn.CreateHud();
-
-        if (_currentHud != null)
-            _currentHud.SetParent(_hudParent, false);
-    }
-
-    private void OnCharacterDamaged()
-    {
-        PawnStack.RemoveAll();
-    }
-
-    private void OnCharacterDied()
-    {
-        Delayed.Do(() => _panels.InstantiateAndOpenFrom(_deathScreen), 1.75f);
-    }
-
-    private void UpdateState()
-    {
-        // Hud
-        bool showHud =
-            _panels.HasActivePanel == false &&
-            _character.IsDead == false &&
-            PawnStack.IsStackEmpty == true;
-
-        _hud.SetActive(showHud);
-
-        // Cursor
-        bool showCursor = _panels.HasActivePanel == true || PawnStack.ActivePawn.ShowCursor == true;
-
-        Cursor.visible = showCursor;
-        Cursor.lockState = showCursor ? CursorLockMode.None : CursorLockMode.Locked;
-
-        // Pause
-        bool pauseGame = _panels.RequirePause();
-
-        Time.timeScale = pauseGame ? 0f : 1f;
     }
 
     private void ApplyCameraState(CameraState state)
     {
         _mainCamera.transform.SetPositionAndRotation(state.Position, state.Rotation);
         _mainCamera.fieldOfView = state.FieldOfView;
-
         _currentState = state;
     }
 
-    public bool TryOpenItemSelection(ItemSelector selector)
+    protected virtual void UpdateState()
     {
-        if (_character.Inventory.IsEmpty)
+        // Cursor
+        bool showCursor = ActiveGameplay.ShowCursor == true;
+        Cursor.visible = showCursor;
+        Cursor.lockState = showCursor ? CursorLockMode.None : CursorLockMode.Locked;
+
+        // Pause
+        bool pauseGame = RequirePause();
+        Time.timeScale = pauseGame ? 0f : 1f;
+    }
+
+    protected virtual bool HandleEscapeButton()
+    {
+        if (IsStackEmpty)
             return false;
 
-        var selectionScreen = Panels.InstantiateAndOpenFrom(_itemSelectionScreen);
-        selectionScreen.Setup(_character.Inventory, selector);
+        if (ActiveGameplay.CanRemoveAtWill() == false)
+            return true;
+
+        switch (ActiveGameplay)
+        {
+            case Pawn pawn:
+                RemovePawn(pawn);
+                break;
+            case UI_Panel panel:
+                DestroyPanel(panel);
+                break;
+        }
+
         return true;
+    }
+
+    protected virtual void OnActiveStateChanged()
+    {
+        StateChanged?.Invoke(ActiveGameplay);
+
+        _lastCameraState = _currentState;
+
+        if (_cameraTransition == CameraTransition.Fade)
+            ScreenFade.FadeOutFor(0.6f);
+    }
+
+    public void AddPawn(Pawn pawn)
+    {
+        Push(pawn);
+    }
+
+    // Queue for next frame, only isntantiate for now?
+    public T OpenPanel<T>(Prefab<T> prefab) where T : UI_Panel
+    {
+        T panel = prefab.Instantiate();
+        panel.transform.SetParent(_panelsStack, false);
+        _panelsToAdd.Add(panel); // Delayed until next frame!
+        return panel;
+    }
+
+    private void Push(GameplayState state)
+    {
+        ActiveGameplay.OnLostPlayerControl();
+
+        _stack.Add(state);
+        state.OnAddedToStack(this);
+        state.OnReceivePlayerControl();
+
+        TimeSinceLastGameplayStateChange = TimeSince.Now();
+        _cameraTransition = state.GetCameraTransition();
+        OnActiveStateChanged();
+        RefreshView();
+    }
+
+    public void RemovePawn(Pawn pawn)
+    {
+        Remove(pawn);
+    }
+
+    public void DestroyPanel(UI_Panel panel)
+    {
+        Debug.Log($"Removing {panel}");
+        Remove(panel);
+        Destroy(panel.gameObject);
+    }
+
+    private void Remove(GameplayState state)
+    {
+        bool removingActivePawn = state == ActiveGameplay;
+
+        if (removingActivePawn == true)
+        {
+            state.OnLostPlayerControl();
+        }
+
+        _stack.Remove(state);
+        state.OnRemovedFromStack();
+
+        if (removingActivePawn == true)
+        {
+            ActiveGameplay.OnReceivePlayerControl();
+            TimeSinceLastGameplayStateChange = TimeSince.Now();
+            _cameraTransition = state.GetCameraTransition();
+            OnActiveStateChanged();
+        }
+
+        Debug.Log($"Refreshing view");
+        Debug.Log($"Topmost state is {ActiveGameplay}");
+        RefreshView();
+    }
+
+    public bool RequirePause()
+    {
+        for (int i = 0; i < _stack.Count; i++)
+        {
+            if (_stack[i].RequirePause == true)
+                return true;
+        }
+
+        return false;
+    }
+
+    private void RefreshView()
+    {
+        // Disable hidder
+        _backgroundHidder.SetParent(null, false);
+        _backgroundHidder.gameObject.SetActive(false);
+
+        var toHide = new List<UI_Panel>(_stack.Count);
+
+        // Not safe to do with pawns! With pause menu too!
+        for (int i = 0; i < _stack.Count; i++)
+        {
+            if (_stack[i] is UI_Panel panel)
+                toHide.Add(panel);
+        }
+
+        bool hidderSet = false;
+
+        for (int i = _stack.Count - 1; i >= 0; i--)
+        {
+            if (_stack[i] is not UI_Panel inspectedPanel)
+                continue;
+
+            inspectedPanel.gameObject.SetActive(true);
+            toHide.Remove(inspectedPanel);
+
+            if (hidderSet == false && inspectedPanel.HideBackground == true)
+            {
+                int siblingIndex = inspectedPanel.transform.GetSiblingIndex();
+                _backgroundHidder.SetParent(_panelsStack, false);
+                _backgroundHidder.SetSiblingIndex(siblingIndex);
+                _backgroundHidder.gameObject.SetActive(true);
+                hidderSet = true;
+            }
+
+            // If a panel hides panels below, it basically acts like the last panel
+            if (inspectedPanel.HidePanelsBelow == true)
+                break;
+        }
+
+        // Actually disable hidden panels
+        for (int i = 0; i < toHide.Count; i++)
+        {
+            toHide[i].gameObject.SetActive(false);
+        }
+    }
+
+    private VirtualCamera GetFirstCamera()
+    {
+        for (int i = _stack.Count - 1; i >= 0; i--)
+        {
+            switch (_stack[i])
+            {
+                case UI_Panel panel:
+                    var camera = panel.GetVirtualCamera();
+                    if (camera != null)
+                        return camera;
+                    continue;
+                case Pawn pawn:
+                    return pawn.GetVirtualCamera();
+            }
+        }
+
+        return _defaultPawn.GetVirtualCamera();
     }
 
 }
 
-public sealed class PawnStack
+public abstract class GameplayState : MonoBehaviour
 {
 
-    public event Action<Pawn> ActivePawnChanged;
+    private readonly List<PawnAction> _actions = new List<PawnAction>();
 
-    private readonly Player _player;
-    private readonly Pawn _defaultPawn;
-    private readonly List<Pawn> _stack = new List<Pawn>();
+    public virtual bool ShowCursor => false;
+    public BasePlayer Player { get; private set; }
+    public bool IsPossesed => Player != null && Player.ActiveGameplay == this;
+    public bool HasActions => _actions.Count > 0;
+    public virtual bool RequirePause => false;
 
-    public PawnStack(Player player, Pawn defaultPawn)
+    public abstract VirtualCamera GetVirtualCamera();
+    public abstract CameraTransition GetCameraTransition();
+
+    public virtual void OnAddedToStack(BasePlayer player)
     {
-        _player = player;
-        _defaultPawn = defaultPawn;
-        _defaultPawn.OnAddedToStack(player);
-        _defaultPawn.OnReceivePlayerControl();
-
-        CameraTransition = defaultPawn.CameraTransition;
+        Player = player;
     }
 
-    public Pawn ActivePawn => _stack.Count > 0 ? _stack[^1] : _defaultPawn;
-    public bool IsStackEmpty => _stack.Count == 0;
-    public TimeSince TimeSinceLastActivePawnChange { get; private set; } = TimeSince.Never;
-
-    public CameraTransition CameraTransition { get; private set; }
-
-    public void Push(Pawn pawn)
+    public virtual void OnRemovedFromStack() 
     {
-        ActivePawn.OnLostPlayerControl();
-
-        _stack.Add(pawn);
-        pawn.OnAddedToStack(_player);
-        pawn.OnReceivePlayerControl();
-
-        TimeSinceLastActivePawnChange = TimeSince.Now();
-        CameraTransition = pawn.CameraTransition;
-        ActivePawnChanged?.Invoke(ActivePawn);
+        Player = null;
     }
 
-    public void Remove(Pawn pawn)
+    public virtual void OnReceivePlayerControl() { }
+    public virtual void OnLostPlayerControl() { }
+    public virtual void InputTick() { }
+    public virtual bool CanRemoveAtWill() => true;
+    public PawnAction[] GetActions()
     {
-        bool removingActivePawn = pawn == ActivePawn;
-
-        if (removingActivePawn == true)
-        {
-            pawn.OnLostPlayerControl();
-        }
-
-        _stack.Remove(pawn);
-        pawn.OnRemovedFromStack(_player);
-
-        if (removingActivePawn == true)
-        {
-            ActivePawn.OnReceivePlayerControl();
-            TimeSinceLastActivePawnChange = TimeSince.Now();
-            CameraTransition = pawn.CameraTransition;
-            ActivePawnChanged?.Invoke(ActivePawn);
-        }
+        return _actions.ToArray();
     }
 
-    public void RemoveAll()
+    protected void RegisterAction(PawnAction action)
     {
-        if (IsStackEmpty == true)
-            return;
-
-        ActivePawn.OnLostPlayerControl();
-        ActivePawn.OnRemovedFromStack(_player);
-
-        for (int i = _stack.Count - 1; i >= 0; i--)
-        {
-            _stack[i].OnRemovedFromStack(_player);
-            CameraTransition = _stack[i].CameraTransition; // Not sure if this is correct
-        }
-
-        ActivePawn.OnReceivePlayerControl();
-
-        TimeSinceLastActivePawnChange = TimeSince.Now();
-        ActivePawnChanged?.Invoke(ActivePawn);
+        _actions.Add(action);
     }
 
 }

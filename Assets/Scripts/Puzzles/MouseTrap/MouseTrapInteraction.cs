@@ -32,7 +32,11 @@ public sealed class MouseTrapInteraction : Interaction
         }
 
         Notification.Show("Empty. Not rat, no bait", 3f);
-        player.Player.TryOpenItemSelection(new CheeseSelector(_mouseTrap));
+
+        if (player.Inventory.IsEmpty == false)
+            player.Player.OpenPanel(Panels.SelectionScreen).
+                Setup(player.Inventory, new CheeseSelector(_mouseTrap));
+            //(player.Player as Player)?.OpenItemSelection(new CheeseSelector(_mouseTrap));
     }
 
     public sealed class CheeseSelector : ItemSelector

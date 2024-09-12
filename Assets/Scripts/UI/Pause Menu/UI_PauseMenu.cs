@@ -2,7 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using DG.Tweening;
-using TMPro;
 using UnityEngine.SceneManagement;
 
 [DefaultExecutionOrder(Order.UI)]
@@ -18,6 +17,7 @@ public sealed class UI_PauseMenu : UI_Panel
 
     private void OnEnable()
     {
+        return;
         _sequeence = DOTween.Sequence().
             Append(_mainPanel.DOFade(1f, 0.75f).From(0f).SetEase(Ease.OutExpo)).
             Join(_buttonsPanel.DOScale(1f, 0.35f).From(0.9f).SetEase(Ease.OutExpo)).
@@ -47,7 +47,7 @@ public sealed class UI_PauseMenu : UI_Panel
 
     public void RestartButton()
     {
-        Owner.InstantiateAndOpenFrom(_yesNoWindow).Setup("Restart level?", string.Empty, () =>
+        Player.OpenPanel(_yesNoWindow).Setup("Restart level?", string.Empty, () =>
         {
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         });

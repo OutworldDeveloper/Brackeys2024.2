@@ -50,7 +50,7 @@ public class UI_YesNoWindow : UI_Panel
         CloseAndDestroy();
     }
 
-    public override bool CanUserClose()
+    public override bool CanRemoveAtWill()
     {
         return _canClose;
     }

@@ -107,7 +107,7 @@ public class ColorLockPuzzle : Pawn
 
         _door.Unblock();
         _door.TryOpen();
-        Player.PawnStack.Push(_successPawn);
+        Player.AddPawn(_successPawn);
         RemoveFromStack();
     }
 

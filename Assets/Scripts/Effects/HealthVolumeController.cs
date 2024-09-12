@@ -23,17 +23,17 @@ public sealed class HealthVolumeController : MonoBehaviour
 
     private void OnEnable()
     {
-        _character.DamagedMental += Refresh;
+        //_character.DamagedMental += Refresh;
     }
 
     private void OnDisable()
     {
-        _character.DamagedMental -= Refresh;
+        //_character.DamagedMental -= Refresh;
     }
 
     private void Refresh()
     {
-        _volume.weight = 1 - _character.MentalHealth / _character.MaxMentalHealth;
+        //_volume.weight = 1 - _character.MentalHealth / _character.MaxMentalHealth;
     }
 
 }

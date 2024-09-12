@@ -14,7 +14,7 @@ public sealed class EnterCodeInteraction : Interaction
 
     public override void Perform(PlayerCharacter player)
     {
-        player.Player.PawnStack.Push(_codeLock);
+        player.Player.AddPawn(_codeLock);
     }
 
 }

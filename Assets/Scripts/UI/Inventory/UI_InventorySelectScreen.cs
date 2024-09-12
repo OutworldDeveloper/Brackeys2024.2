@@ -12,7 +12,7 @@ public sealed class UI_InventorySelectScreen : UI_Panel
     private Inventory _inventory;
     private ItemSelector _itemSelector;
 
-    public void Setup(Inventory inventory, ItemSelector itemSelector)
+    public UI_InventorySelectScreen Setup(Inventory inventory, ItemSelector itemSelector)
     {
         _inventory = inventory;
         _itemSelector = itemSelector;
@@ -23,6 +23,8 @@ public sealed class UI_InventorySelectScreen : UI_Panel
             display.Init(item);
             display.Selected += TrySelect;
         }
+
+        return this;
     }
 
     private void TrySelect(Item item)

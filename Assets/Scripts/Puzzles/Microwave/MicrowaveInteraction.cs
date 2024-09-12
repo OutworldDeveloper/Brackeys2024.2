@@ -6,6 +6,8 @@ public sealed class MicrowaveInteraction : Interaction
 
     private Microwave _microwave;
 
+    [SerializeField] private VirtualCamera _virtualCamera;
+
     private void Awake()
     {
         _microwave = GetComponentInParent<Microwave>();
@@ -27,7 +29,13 @@ public sealed class MicrowaveInteraction : Interaction
         if (player.Inventory.IsEmpty)
             Notification.Show("I have nothing to insert");
         else
-            player.Player.TryOpenItemSelection(new MicrowaveSelector(_microwave));
+            player.Player.OpenPanel(Panels.SelectionScreen).
+                Setup(player.Inventory, new MicrowaveSelector(_microwave)).
+                SetVirtualCamera(_virtualCamera, CameraTransition.Move);
+
+            //(player.Player as Player)?.
+            //    OpenItemSelection(new MicrowaveSelector(_microwave)).
+            //    SetVirtualCamera(_virtualCamera, CameraTransition.Move);
     }
 
     private sealed class MicrowaveSelector : ItemSelector

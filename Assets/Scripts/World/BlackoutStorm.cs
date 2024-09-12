@@ -4,11 +4,11 @@ public sealed class BlackoutStorm : Storm
 {
 
     [SerializeField] private float _duration = 10f;
-    [SerializeField] private Light[] _lights;
+    [SerializeField] private LightsController _lightController;
 
     protected override void OnStormStarted()
     {
-        SetLightsActive(false);
+        _lightController.TurnOff();
     }
 
     public override bool UpdateStorm()
@@ -16,16 +16,8 @@ public sealed class BlackoutStorm : Storm
         if (TimeSinceStarted < _duration)
             return false;
 
-        SetLightsActive(true);
+        _lightController.TurnOn();
         return true;
-    }
-
-    private void SetLightsActive(bool active)
-    {
-        foreach (var light in _lights)
-        {
-            light.enabled = active;
-        }
     }
 
 }

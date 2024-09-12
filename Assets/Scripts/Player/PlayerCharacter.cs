@@ -8,7 +8,6 @@ public sealed class PlayerCharacter : Pawn
 {
 
     public event Action Damaged;
-    public event Action DamagedMental;
     public event Action Died;
 
     [SerializeField] private Transform _head;
@@ -18,7 +17,6 @@ public sealed class PlayerCharacter : Pawn
     [SerializeField] private float _speed;
     [SerializeField] private float _jumpForce;
     [SerializeField] private float _maxHealth = 5f;
-    [SerializeField] private float _maxMentalHealth = 100f;
     [SerializeField] private bool _allowJumping;
     [SerializeField] private bool _allowCrouching;
     [SerializeField] private float _crouchedCameraHeight = -0.75f;
@@ -43,6 +41,8 @@ public sealed class PlayerCharacter : Pawn
 
     [SerializeField] private float _targetToZeroTime = 0.25f;
     [SerializeField] private float _shakeToTargetTime = 0.25f;
+
+    [SerializeField] private float _maxOxygen = 10f;
 
     private CharacterController _controller;
     private Vector3 _velocityXZ;
@@ -82,13 +82,14 @@ public sealed class PlayerCharacter : Pawn
     // For water splashes
     private bool _wasInWater;
 
+    private bool _wasHeadInWater;
+    private TimeSince _timeSinceHeadUnderwater;
+
     public PlayerInteraction Interactor => _interactor;
     public Inventory Inventory => _inventory;
     public bool IsDead { get; private set; }
     public float MaxHealth => _maxHealth;
     public float Health { get; private set; }
-    public float MaxMentalHealth => _maxMentalHealth;
-    public float MentalHealth { get; private set; }
     public Vector3 HorizontalVelocity => _velocityXZ;
     public bool IsGrounded => _controller.isGrounded;
     public bool IsCrouching => _isCrouching;
@@ -105,7 +106,6 @@ public sealed class PlayerCharacter : Pawn
         _headPosition = _head.localPosition;
 
         Health = _maxHealth;
-        MentalHealth = _maxMentalHealth;
 
         ApplyModifier(new SpawnBlockModifier(), 0.4f);
 
@@ -140,6 +140,21 @@ public sealed class PlayerCharacter : Pawn
 
     private void Update()
     {
+        var isHeadInWater = IsHeadInWater();
+
+        if (_wasHeadInWater == false && isHeadInWater == true)
+        {
+            _timeSinceHeadUnderwater = TimeSince.Now();
+        }
+
+        _wasHeadInWater = isHeadInWater;
+
+        if (isHeadInWater == true && _timeSinceHeadUnderwater > _maxOxygen)
+        {
+            Kill();
+        }
+
+        // Splashes
         var isInWater = IsInWater();
 
         if (_wasInWater == false && isInWater == true && _velocityY < -5f)
@@ -298,19 +313,6 @@ public sealed class PlayerCharacter : Pawn
         }
     }
 
-    public void ApplyMentalDamage(float damage)
-    {
-        if (IsDead == true)
-            return;
-
-        _timeSinceLastMentalDamage = TimeSince.Now();
-        MentalHealth = MathF.Max(0f, MentalHealth - damage);
-        DamagedMental?.Invoke();
-
-        if (MentalHealth <= 0f)
-            Kill();
-    }
-
     private PlayerInput GatherInput()
     {
         var playerInput = new PlayerInput();
@@ -423,7 +425,8 @@ public sealed class PlayerCharacter : Pawn
     }
 
     private bool IsInWater() => Water.Level > transform.position.y + _swimPointOffset;
-    private bool IsFeetInWater() => Water.Level > transform.position.y + 0.15f;
+    private bool IsFeetInWater() => Water.Level > transform.position.y;
+    private bool IsHeadInWater() => Water.Level > _head.position.y;
 
     private void UpdateHealthRegeneration()
     {

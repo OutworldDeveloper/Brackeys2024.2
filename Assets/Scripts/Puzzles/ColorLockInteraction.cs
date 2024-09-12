@@ -14,7 +14,7 @@ public sealed class ColorLockInteraction : Interaction
 
     public override void Perform(PlayerCharacter player)
     {
-        player.Player.PawnStack.Push(_puzzle);
+        player.Player.AddPawn(_puzzle);
     }
 
 }

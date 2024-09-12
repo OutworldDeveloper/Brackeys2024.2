@@ -49,8 +49,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 02740ebcce0ca044aa8d772ab1b0e005, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _requirePause: 0
   <HidePanelsBelow>k__BackingField: 1
-  <RequirePause>k__BackingField: 0
   <HideBackground>k__BackingField: 0
   _layoutParent: {fileID: 9014255877702814239}
   _itemDisplayPrefab: {fileID: 7145446688250841950, guid: ce969920650de1e4d925a5df8cee8495,

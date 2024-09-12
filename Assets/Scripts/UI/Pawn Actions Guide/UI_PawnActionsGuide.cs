@@ -15,57 +15,39 @@ public class UI_PawnActionsGuide : MonoBehaviour
 
     private void Awake()
     {
-        _player.PawnStack.ActivePawnChanged += OnPawnChanged;
-        _player.Panels.Changed += OnPanelsChanged;
+        _player.StateChanged += Refresh;
         _parent.gameObject.SetActive(false);
     }
 
-    private void OnPawnChanged(Pawn pawn)
-    {
-        Refresh();
-    }
+    private PawnAction _closePanelAction = new PawnAction("Back", KeyCode.Tab);
 
-    private void OnPanelsChanged()
-    {
-        Refresh();
-    }
-
-    private PawnAction _closePanelAction = new PawnAction("Back", KeyCode.Escape);
-
-    private void Refresh()
+    private void Refresh(GameplayState active)
     {
         ClearDisplays();
-
         _parent.gameObject.SetActive(false);
 
-        if (_player.Panels.HasActivePanel)
+        if (_player.ActiveGameplay.CanRemoveAtWill() && _player.IsStackEmpty == false)
         {
-            if (_player.Panels.Active.CanUserClose() == false)
-                return;
-
-            _parent.gameObject.SetActive(true);
-
             var display = _displayPrefab.Instantiate();
             display.SetTarget(_closePanelAction);
             display.transform.SetParent(_parent, false);
-
             _currentDisplays.Add(display);
-        }
-        else
-        {
-            if (_player.PawnStack.ActivePawn.HasActions == false)
-                return;
 
             _parent.gameObject.SetActive(true);
+        }
 
-            foreach (var action in _player.PawnStack.ActivePawn.GetActions())
-            {
-                var display = _displayPrefab.Instantiate();
-                display.SetTarget(action);
-                display.transform.SetParent(_parent, false);
+        if (_player.ActiveGameplay.HasActions == false)
+            return;
 
-                _currentDisplays.Add(display);
-            }
+        _parent.gameObject.SetActive(true);
+
+        foreach (var action in _player.ActiveGameplay.GetActions())
+        {
+            var display = _displayPrefab.Instantiate();
+            display.SetTarget(action);
+            display.transform.SetParent(_parent, false);
+
+            _currentDisplays.Add(display);
         }
     }
 
