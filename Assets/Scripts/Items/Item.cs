@@ -1,11 +1,10 @@
-using Alchemy.Inspector;
 using UnityEngine;
 
 [CreateAssetMenu]
 public class Item : ScriptableObject
 {
-
-    [field: SerializeField, FoldoutGroup(nameof(Item))] public string DisplayName { get; private set; }
-    [field: SerializeField, FoldoutGroup(nameof(Item))] public Sprite Sprite { get; private set; }
+    [field: SerializeField] public string DisplayName { get; private set; }
+    [field: SerializeField] public Sprite Sprite { get; private set; }
+    [field: SerializeField] public Prefab<Transform> Model { get; private set; }
 
 }

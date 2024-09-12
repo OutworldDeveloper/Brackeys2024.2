@@ -8,6 +8,7 @@ public class Microwave : DoorBlocker
 {
 
     [SerializeField] private float _duration = 5f;
+    [SerializeField] private ItemPedistal _itemPedistal;
 
 
     private TimeSince _timeSinceLastStart = TimeSince.Never;
