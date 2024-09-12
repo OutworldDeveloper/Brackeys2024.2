@@ -4,7 +4,6 @@ public class PickupInteraction : Interaction
 {
 
     [SerializeField] private Item _item;
-    [SerializeField] private int _amount = 1;
 
     private string _text;
 

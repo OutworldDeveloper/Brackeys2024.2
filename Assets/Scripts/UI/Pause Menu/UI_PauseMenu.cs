@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using DG.Tweening;
 using TMPro;
+using UnityEngine.SceneManagement;
 
 [DefaultExecutionOrder(Order.UI)]
 public sealed class UI_PauseMenu : UI_Panel
@@ -11,6 +12,7 @@ public sealed class UI_PauseMenu : UI_Panel
     [SerializeField] private CanvasGroup _mainPanel;
     [SerializeField] private RectTransform _buttonsPanel;
     [SerializeField] private Transform _buttonsParent;
+    [SerializeField] private Prefab<UI_YesNoWindow> _yesNoWindow;
 
     private Sequence _sequeence;
 
@@ -43,9 +45,12 @@ public sealed class UI_PauseMenu : UI_Panel
         CloseAndDestroy();
     }
 
-    public void LoadGameButton()
+    public void RestartButton()
     {
-
+        Owner.InstantiateAndOpenFrom(_yesNoWindow).Setup("Restart level?", string.Empty, () =>
+        {
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        });
     }
 
 }

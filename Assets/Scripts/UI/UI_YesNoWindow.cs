@@ -17,6 +17,8 @@ public class UI_YesNoWindow : UI_Panel
     private Action _confirmAction;
     private Action _cancelAction;
 
+    private bool _canClose;
+
     private void Awake()
     {
         _confirmButton.onClick.AddListener(OnConfirmed);
@@ -30,6 +32,8 @@ public class UI_YesNoWindow : UI_Panel
         _confirmAction = onConfirm;
 
         _cancelButton.gameObject.SetActive(cancelButton);
+
+        _canClose = cancelButton;
 
         return this;
     }
@@ -48,7 +52,7 @@ public class UI_YesNoWindow : UI_Panel
 
     public override bool CanUserClose()
     {
-        return false;
+        return _canClose;
     }
 
 }

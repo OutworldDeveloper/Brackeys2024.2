@@ -16,29 +16,24 @@ public sealed class HealthVolumeController : MonoBehaviour
         _volume = GetComponent<Volume>();
     }
 
+    private void Start()
+    {
+        Refresh();
+    }
+
     private void OnEnable()
     {
-        _character.Damaged += OnCharacterDamaged;
+        _character.DamagedMental += Refresh;
     }
 
     private void OnDisable()
     {
-        _character.Damaged -= OnCharacterDamaged;
+        _character.DamagedMental -= Refresh;
     }
 
-    private void Update()
+    private void Refresh()
     {
-        //_volume.weight = 1 - _character.Health / _character.MaxHealth;
-    }
-
-    private void OnCharacterDamaged()
-    {
-        _volume.weight = 1 - _character.Health / _character.MaxHealth;
-    }
-
-    private void OnCharacterRespawned()
-    {
-        _volume.weight = 0f;
+        _volume.weight = 1 - _character.MentalHealth / _character.MaxMentalHealth;
     }
 
 }

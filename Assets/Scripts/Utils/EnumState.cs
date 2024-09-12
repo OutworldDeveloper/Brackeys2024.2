@@ -9,6 +9,7 @@ public sealed class EnumState<TEnum> where TEnum : Enum
     private readonly EnumCall<TEnum> _stateEndCall;
     private readonly EnumCall<TEnum> _stateStartCall;
     private readonly Dictionary<TEnum, TimeSince> _timeSinceLastEnter = new Dictionary<TEnum, TimeSince>();
+    private bool _isInitialized = false;
 
     public TEnum Current { get; private set; }
     public IEnumCall<TEnum> StateEnded => _stateEndCall;
@@ -23,10 +24,11 @@ public sealed class EnumState<TEnum> where TEnum : Enum
 
     public void Set(TEnum newState)
     {
-        if (Equals(Current, newState) == true)
+        if (Equals(Current, newState) == true && _isInitialized == true)
             return;
 
-        _stateEndCall.Execute();
+        if (_isInitialized == false)
+            _stateEndCall.Execute();
 
         Current = newState;
 
@@ -35,6 +37,8 @@ public sealed class EnumState<TEnum> where TEnum : Enum
 
         StateChanged?.Invoke(Current);
         _stateStartCall.Execute();
+
+        _isInitialized = true;
     }
 
     public EnumCall<TEnum> AddCall()

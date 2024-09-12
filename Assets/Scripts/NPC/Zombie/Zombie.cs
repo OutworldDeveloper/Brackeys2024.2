@@ -4,23 +4,30 @@ using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Animations.Rigging;
 
-[SelectionBase]
+//[SelectionBase]
 [RequireComponent(typeof(NavMeshAgent))]
 public class Zombie : MonoBehaviour
 {
     public enum ThinkState
     {
-        None,
-        Roaming,
-        InvestigateSound,
-        Follow,
+        SelectLocation,
+        InvestigatePoint,
         Engage,
         Escape,
+    }
+
+    public enum WalkState
+    {
+        Walk,
+        Sprint,
+        Escaping,
     }
 
     [SerializeField] private float _speed = 2f;
     [SerializeField] private float _attackDistance = 2.25f;
     [SerializeField] private float _attackLandDistance = 1.5f;
+    [SerializeField] private float _baseRotationSpeed = 2f;
+    [SerializeField] private float _attackRotationSpeed = 1.6f;
 
     [SerializeField] private Animator _animator;
 
@@ -34,36 +41,41 @@ public class Zombie : MonoBehaviour
     [SerializeField] private Sensor _sensor;
     [SerializeField] private SoundsSensor _soundsSensor;
 
-    [SerializeField] private float _toPlayerMltp = 0.3f;
-    [SerializeField] private float _forwardMltp = 0.5f;
-
     [SerializeField] private MultiAimConstraint _headTargetingConstraint;
     [SerializeField] private MultiAimConstraint _bodyTargetingConstraint;
 
-    [SerializeField] private AnimationCurve _jumpCurve;
+    [SerializeField] private AnimationCurve _rotationSlowCurve;
+
+    [SerializeField] private float _timeToLostTarget = 2f;
 
     private NavMeshAgent _agent;
     private PlayerCharacter _player;
+    private ActionsRunner<Zombie> _actionRunner;
 
     private TimeSince _timeSinceLastThink = TimeSince.Never;
     private TimeSince _timeSinceLastSprint = TimeSince.Never;
-    private bool _isSprinting;
+    private WalkState _walkState;
 
     private EnumState<ThinkState> _thinkState = new EnumState<ThinkState>();
     private EnumCall<ThinkState> _thinkCall;
 
-    private RoomInfo[] _rooms;
+    private LocationInfo[] _locations;
 
-    private ActionsRunner<Zombie> _actionRunner;
+    private Vector3 _defaultTargetLocalPosition;
+
+    private Vector3 _lastKnownPlayerLocation;
+    private Vector3 _escapeLocation;
+
+    private Vector3 _investigationPoint;
 
     private float TargetDistance => Vector3.Distance(transform.position, _player.transform.position);
     private float AngleToPlayer => FlatVector.Angle(transform.forward.Flat(), (_player.transform.position - transform.position).normalized.Flat());
 
-    public void Setup(PlayerCharacter player, RoomInfo[] rooms)
+    public void Setup(PlayerCharacter player, LocationInfo[] locations)
     {
         _player = player;
         _sensor.SetTarget(player.gameObject);
-        _rooms = rooms;
+        _locations = locations;
     }
 
     public void Warp(Vector3 location, Vector3 direction)
@@ -77,19 +89,23 @@ public class Zombie : MonoBehaviour
         _thinkState.Set(ThinkState.Escape);
     }
 
+    public void InvestigatePoint(Vector3 point)
+    {
+        _investigationPoint = point;
+        _thinkState.Set(ThinkState.InvestigatePoint);
+    }
+
     private void Awake()
     {
         _agent = GetComponent<NavMeshAgent>();
         _agent.updateRotation = false;
 
         _thinkState.StateStarted.
-            AddCallback(ThinkState.Roaming, OnRoamingStart).
+            AddCallback(ThinkState.SelectLocation, OnRoamingStart).
             AddCallback(ThinkState.Escape, OnEscapeStart);
 
         _thinkCall = _thinkState.AddCall().
-            AddCallback(ThinkState.Roaming, OnRoamingThink).
-            AddCallback(ThinkState.InvestigateSound, OnInvestigateSoundThink).
-            AddCallback(ThinkState.Follow, OnFollowThink).
+            AddCallback(ThinkState.InvestigatePoint, OnInvestigatePointThink).
             AddCallback(ThinkState.Engage, OnEngageThink).
             AddCallback(ThinkState.Escape, OnEscapeThink);
 
@@ -98,71 +114,77 @@ public class Zombie : MonoBehaviour
 
         _soundsSensor.Perceived += OnSoundPerceived;
         _sensor.TargetSpotted += OnTargetSpotted;
-        _sensor.TargetLost += OnTargetLost;
 
         _actionRunner = new ActionsRunner<Zombie>(this);
+
+        _defaultTargetLocalPosition = _lookTarget.localPosition;
     }
 
     private void Start() 
     {
         // This should fixe OnStart not being called
-        _thinkState.Set(ThinkState.Roaming);
+        _thinkState.Set(ThinkState.SelectLocation);
     }
 
     private void OnSoundPerceived(SoundEvent soundEvent)
     {
-        if (_thinkState == ThinkState.Follow || _thinkState == ThinkState.Engage || _thinkState == ThinkState.Escape)
+        if (_thinkState == ThinkState.Engage || _thinkState == ThinkState.Escape)
             return;
 
-        _thinkState.Set(ThinkState.InvestigateSound);
+        InvestigatePoint(soundEvent.Position);
     }
 
     private void OnTargetSpotted()
     {
-        if (_thinkState == ThinkState.Escape || _thinkState == ThinkState.Engage)
-            return;
-
-        _thinkState.Set(ThinkState.Follow);
-    }
-
-    private void OnTargetLost()
-    {
         if (_thinkState == ThinkState.Escape)
             return;
 
-        _thinkState.Set(ThinkState.Roaming);
+        _thinkState.Set(ThinkState.Engage);
     }
 
     private void Update()
     {
         _actionRunner.Update();
 
-        //float targetWeight = _target == null ? 0f : _isSprinting == true ? 0f : 1f;
-        //_headTargetingConstraint.weight = Mathf.Lerp(_headTargetingConstraint.weight, targetWeight, 4f * Time.deltaTime);
-        //_bodyTargetingConstraint.weight = Mathf.Lerp(_bodyTargetingConstraint.weight, targetWeight * 0.45f, 4f * Time.deltaTime);
-
-        //
-        //Vector3 targetLookPosition = _target != null ? 
-        //    _target.transform.position + Vector3.up * 1.75f : 
-        //    transform.position + Vector3.up * 1.75f + Vector3.forward;
-
-        //_lookTarget.transform.position = Vector3.Lerp(_lookTarget.transform.position, targetLookPosition, 3f * Time.deltaTime);
+        UpdateVisualRotation();
 
         _animator.SetFloat("velocity", _agent.velocity.magnitude);
 
-        _agent.speed = _actionRunner.HasActiveAction ? 0f : GetSpeed();
-
         if (_actionRunner.HasActiveAction)
+        {
+            _agent.speed = 0f;
             return;
+        }
 
-        RotateTo(_agent.velocity, 5f);
+        Vector3 direction = (_agent.steeringTarget.Flat() - transform.position.Flat()).normalized;
+        float dot = Vector3.Dot(transform.forward.Flat().normalized, direction);
+        float speedModifier = Mathf.Clamp01(dot);
+        speedModifier = _rotationSlowCurve.Evaluate(speedModifier);
 
-        float dot = Vector3.Dot(transform.forward, _agent.velocity);
-        float speedModifier = Mathf.Pow(dot, 2);
-        speedModifier = Mathf.Clamp(speedModifier, 0.7f, 1f);
-        _agent.speed = _agent.speed * speedModifier;
+        RotateTo(direction, _baseRotationSpeed);
+
+        _agent.speed = GetSpeed() * speedModifier;
+
+        if (_sensor.IsTargetVisible || _sensor.TimeSinceTargetLost < 1.5f)
+            _lastKnownPlayerLocation = _player.transform.position;
+
+        Debug.DrawRay(_lastKnownPlayerLocation, Vector3.up, Color.cyan);
 
         UpdateThink();
+    }
+
+    private void UpdateVisualRotation()
+    {
+        Vector3 targetLookPosition = ShouldLookAtPlayer() ?
+            _player.transform.position + Vector3.up * 1.75f :
+            transform.TransformPoint(_defaultTargetLocalPosition);
+
+        _lookTarget.transform.position = Vector3.Lerp(_lookTarget.transform.position, targetLookPosition, 3f * Time.deltaTime);
+    }
+
+    private bool ShouldLookAtPlayer()
+    {
+        return _thinkState == ThinkState.Escape ? false : _sensor.IsTargetVisible;
     }
 
     private void UpdateThink()
@@ -176,22 +198,40 @@ public class Zombie : MonoBehaviour
 
     private void OnRoamingStart()
     {
-        Debug.Log("OnRoamingStart");
-        var roamingDestination = SelectRoamingDestination();
-        _agent.SetDestination(roamingDestination);
-        Debug.Log(roamingDestination);
+        Notification.ShowDebug("OnRoamingStart");
+        InvestigatePoint(SelectRoamingDestination());
     }
 
     private Vector3 SelectRoamingDestination()
     {
-        List<Vector3> potentialDestinations = new List<Vector3>(_rooms.Length);
+        var randomizer = new WeightedRandom<Vector3>(_locations.Length);
 
-        foreach (var roomInfo in _rooms)
+        foreach (var location in _locations)
+        {
+            float distance = Vector3.Distance(transform.position, location.transform.position);
+
+            if (distance < 5f)
+                continue;
+
+            float playerDistance = Vector3.Distance(_player.transform.position, location.transform.position);
+
+            float weight = 1 / (1 + playerDistance);
+
+            randomizer.Add(location.transform.position, weight);
+        }
+
+        return randomizer.GetRandomItem();
+
+        //
+
+        List<Vector3> potentialDestinations = new List<Vector3>(_locations.Length);
+
+        foreach (var roomInfo in _locations)
         {
             // TODO: Path then calculate path distance
             float locationDistance = Vector3.Distance(transform.position, roomInfo.transform.position);
 
-            if (locationDistance < 3f)
+            if (locationDistance < 7f)
                 continue;
 
             potentialDestinations.Add(roomInfo.transform.position);
@@ -200,85 +240,67 @@ public class Zombie : MonoBehaviour
         return potentialDestinations[Randomize.Index(potentialDestinations.Count)];
     }
 
-    private void OnRoamingThink()
-    {
-        if (Randomize.Chance(600))
-            _actionRunner.Run(new RoarAction());
-
-        if (Vector3.Distance(transform.position, _agent.destination) > 1.5f)
-            return;
-
-        OnRoamingStart();
-        _actionRunner.Run(new LookAround());
-    }
-
-    private void OnInvestigateSoundThink()
+    private void OnInvestigatePointThink()
     {
         _agent.stoppingDistance = 0f;
-        _agent.SetDestination(_soundsSensor.LastEvent.Position);
-        Debug.DrawRay(_agent.destination, Vector3.up, Color.magenta);
+        _agent.SetDestination(_investigationPoint);
 
-        if (Vector3.Distance(transform.position, _agent.destination) < 1f)
+        if (_agent.pathStatus == NavMeshPathStatus.PathInvalid)
         {
-            _thinkState.Set(ThinkState.Roaming);
+            Notification.ShowDebug("Path is invalid, return to roaming");
+            _thinkState.Set(ThinkState.SelectLocation);
+        }
+
+        if (_agent.pathPending == false &&
+            _agent.remainingDistance <= _agent.stoppingDistance &&
+            (_agent.hasPath == false || _agent.velocity.sqrMagnitude == 0f))
+        {
+            Notification.ShowDebug("Investigation point reached, looking around now");
+            _thinkState.Set(ThinkState.SelectLocation);
             _actionRunner.Run(new LookAround());
         }
     }
 
-    private void OnFollowThink()
+    private void OnEngageThink()
     {
-        if (Randomize.Chance(50) == true)
+        if (_sensor.IsTargetVisible == false && _sensor.TimeSinceTargetLost > _timeToLostTarget)
         {
-            _actionRunner.Run(new RoarAction());
+            InvestigatePoint(_lastKnownPlayerLocation);
             return;
         }
 
-        if (TryAttackIfMakesSense() == true)
-            return;
-
-        if (TryEngage() == true)
-            return;
-
-        _agent.stoppingDistance = 1f;
-        _agent.SetDestination(_player.transform.position);
-    }
-
-    private void OnEngageThink()
-    {
         _agent.stoppingDistance = _agent.radius + 0.5f;
         _agent.SetDestination(_player.transform.position);
 
-        if (_isSprinting == false && _timeSinceLastSprint > 14f && TargetDistance > 5f && Randomize.Chance(40))
-        {
-            _timeSinceLastSprint = TimeSince.Now();
-            _isSprinting = true;
-            return;
-        }
-
-        // Костыль
-        if (_isSprinting == false && TargetDistance > 8.5f && Randomize.Chance(15))
-        {
-            _timeSinceLastSprint = TimeSince.Now();
-            _isSprinting = true;
-            return;
-        }
+        //if (_isSprinting == false && _timeSinceLastSprint > 14f && TargetDistance > 5f && Randomize.Chance(40))
+        //{
+        //    _timeSinceLastSprint = TimeSince.Now();
+        //    //_isSprinting = true;
+        //    return;
+        //}
         //
+        //// Костыль
+        //if (_isSprinting == false && TargetDistance > 8.5f && Randomize.Chance(15))
+        //{
+        //    _timeSinceLastSprint = TimeSince.Now();
+        //    //_isSprinting = true;
+        //    return;
+        //}
+        ////
+        //
+        //if (_isSprinting == true)
+        //{
+        //    if (_timeSinceLastSprint > 2f || TargetDistance < 3.5f)
+        //        _isSprinting = false;
+        //}
 
-        if (_isSprinting == true)
-        {
-            if (_timeSinceLastSprint > 2f || TargetDistance < 3.5f)
-                _isSprinting = false;
-        }
-
-        Try.Any(TryAttackIfMakesSense, TryJump);
+        TryAttackIfMakesSense();
     }
 
     private void OnEngageThinkExit()
     {
-        _isSprinting = false;
+        _walkState = WalkState.Walk;
     }
-
-    private Vector3 _escapeLocation;
 
     private void OnEscapeStart()
     {
@@ -287,15 +309,15 @@ public class Zombie : MonoBehaviour
         _escapeLocation = SelectEscapeLocation();
         _agent.SetDestination(_escapeLocation);
 
-        _isSprinting = true;
+        _walkState = WalkState.Escaping;
     }
 
     private Vector3 SelectEscapeLocation()
     {
-        Vector3 bestLocation = _rooms[0].transform.position;
+        Vector3 bestLocation = _locations[0].transform.position;
         float bestDistance = 0f;
 
-        foreach (var roomInfo in _rooms)
+        foreach (var roomInfo in _locations)
         {
             float distance = Vector3.Distance(_player.transform.position, roomInfo.transform.position);
 
@@ -347,81 +369,31 @@ public class Zombie : MonoBehaviour
         return true;
     }
 
-    private bool TryJump()
-    {
-        return false;
-        /*
-        if (Randomize.Chance(20) == false)
-            return false;
-
-        int rays = 16;
-
-        Vector3 bestSpot = transform.position;
-        float bestScore = float.NegativeInfinity;
-        float distance = 0f;
-
-        for (int i = 0; i < rays; i++)
-        {
-            Vector3 rayDirection = Quaternion.AngleAxis(i * (360 / 16), Vector3.up) * transform.forward;
-
-            NavMesh.Raycast(transform.position, transform.position + rayDirection * 3f, out NavMeshHit hit, _agent.areaMask);
-
-            Debug.DrawRay(transform.position, rayDirection * hit.distance, hit.hit ? Color.red : Color.green, 1f);
-
-            float score = hit.distance / 3f;
-
-            score +=
-                (Vector3.Dot(rayDirection, (_player.transform.position - transform.position).normalized) + 1f) / 2
-                * _toPlayerMltp;
-
-            score += Randomize.Float(0.0f, 0.4f); // Not sure
-
-            if (score > bestScore)
-            {
-                bestScore = score;
-                bestSpot = transform.position + rayDirection * hit.distance;
-                distance = hit.distance;
-            }
-        }
-
-        if (bestScore < 0f)
-            return false;
-
-        if (distance < 2.5f)
-            return false;
-
-        _jumpPosition = bestSpot;
-        _currentAction.Set(Action.Jump);
-        return true;
-        */
-    }
-
-    private void OnNoneActionStart()
-    {
-        _agent.ResetPath();
-        _isSprinting = false;
-    }
-
     private void RotateTo(Vector3 direction, float speed)
     {
         transform.forward = Vector3.RotateTowards(transform.forward, direction, speed * Time.deltaTime, 0f);
     }
 
-    private float GetSpeed()
+    private float GetSpeed() => _walkState switch
     {
-        if (_thinkState == ThinkState.InvestigateSound || 
-            _thinkState == ThinkState.Follow ||
-            _thinkState == ThinkState.Roaming)
-            return 0.75f;
-
-        return _isSprinting ? 5f : _speed;
-    }
+        WalkState.Sprint => _speed * 1.5f,
+        WalkState.Escaping => 5f,
+        _ => _speed,
+    };
 
     private void OnDrawGizmos()
     {
 #if UNITY_EDITOR
+        if (!Application.isPlaying)
+            return;
+
+        Vector3 direction = (_agent.steeringTarget.Flat() - transform.position.Flat()).normalized;
+        float dot = Vector3.Dot(transform.forward.Flat().normalized, direction);
+        float speedModifier = Mathf.Clamp01(dot);
+        speedModifier = _rotationSlowCurve.Evaluate(speedModifier);
+
         UnityEditor.Handles.Label(transform.position + Vector3.up * 2f, 
-            $"Think: {_thinkState.Current}, {_actionRunner}");
+            $"Think: {_thinkState.Current}, {_actionRunner}, SM: {speedModifier}");
 #endif
     }
 
@@ -446,19 +418,20 @@ public class Zombie : MonoBehaviour
     private sealed class AttackAction : ActorAction<Zombie>
     {
 
-        public const float ATTACK_POINT = 0.73333333333f;
-        public const float BACKSWING_DURATION = 1.43333333333f;
+        public const float ATTACK_POINT = 0.3f;
+        public const float BACKSWING_DURATION = 1f;
 
         private bool _isAttackPointReached = false;
 
         public override void OnStarted()
         {
-            Owner._animator.CrossFade("attack", 0.1f);
+            Notification.ShowDebug($"Attack started");
+            Owner._animator.SetTrigger("attack");
         }
 
         public override bool Execute()
         {
-            Owner.RotateTo((Owner._player.transform.position - Owner.transform.position).normalized, 1.6f);
+            Owner.RotateTo((Owner._player.transform.position - Owner.transform.position).normalized, Owner._attackRotationSpeed);
 
             if (_isAttackPointReached == false && TimeSinceStarted > ATTACK_POINT)
             {
@@ -471,7 +444,7 @@ public class Zombie : MonoBehaviour
 
         public override void OnStopped()
         {
-            if (Randomize.Chance(5)) Owner._actionRunner.Run(new RoarAction());
+            //if (Randomize.Chance(5)) Owner._actionRunner.Run(new RoarAction());
         }
 
         private void OnAttackPoint()
@@ -490,54 +463,21 @@ public class Zombie : MonoBehaviour
 
             Owner._player.ApplyDamage(1f, (Owner._player.transform.position - Owner.transform.position).normalized);
             Owner._hitSound.Play(Owner._audioSource);
+            Owner._player.ApplyModifier(new HurtModifier(), 0.6f);
         }
 
-    }
-
-    private sealed class Jump : ActorAction<Zombie>
-    {
-
-        public const float PREP_DURATION = 0.95f;
-        public const float POST_JUMP_DURATION = 0.8f; // QUEUE ACTION INSTEAD
-
-        private readonly Vector3 _targetPosition;
-        private Vector3 _jumpStartPosition;
-        private float _jumpDuration;
-        private bool _almostLanded;
-
-        public Jump(Vector3 position)
+        private sealed class HurtModifier : CharacterModifier
         {
-            _targetPosition = position; 
-        }
-
-        public override void OnStarted()
-        {
-            Owner._animator.CrossFade("jump_init", 0.1f, 0);
-
-            _jumpStartPosition = Owner.transform.position;
-            _jumpDuration = Vector3.Distance(_jumpStartPosition, _targetPosition) * 0.175f;
-        }
-
-        public override bool Execute()
-        {
-            Owner.RotateTo(_targetPosition - Owner.transform.position, 5f);
-
-            if (_almostLanded == false)
-                return false;
-
-            if (TimeSinceStarted > PREP_DURATION + _jumpDuration - 0.3f)
+            public override bool CanJump()
             {
-                _almostLanded = true;
-                Owner._animator.CrossFade("jump_land", 0.1f, 0);
+                return false;
             }
 
-            float t = (TimeSinceStarted - PREP_DURATION) / _jumpDuration;
-            t = Mathf.SmoothStep(0f, 1f, t);
-            //t = _jumpCurve.Evaluate(t);
-            Vector3 position = Vector3.Lerp(_jumpStartPosition, _targetPosition, t);
-            Owner._agent.Move(position - Owner.transform.position);
+            public override float GetSpeedMultiplier()
+            {
+                return 0.3f;
+            }
 
-            return TimeSinceStarted > _jumpDuration;
         }
 
     }
@@ -549,7 +489,7 @@ public class Zombie : MonoBehaviour
 
         public override void OnStarted()
         {
-            Owner._animator.Play("roar");
+            Owner._animator.SetTrigger("look_around");
         }
 
         public override bool Execute()
@@ -620,264 +560,5 @@ public abstract class ActorAction<TOwner>
     public virtual void OnStarted() { }
     public virtual void OnStopped() { }
     public abstract bool Execute();
-
-}
-
-public static class Try
-{
-    public static bool This(params Func<bool>[] stack)
-    {
-        for (int i = 0; i < stack.Length; i++)
-        {
-            if (stack[i].Invoke() == true)
-                return true;
-        }
-
-        return false;
-    }
-
-    public static bool Any(Func<bool> a, Func<bool> b)
-    {
-        if (a.Invoke() == true)
-            return true;
-
-        return b.Invoke();
-    }
-
-    public static bool Any(Func<bool> a, Func<bool> b, Func<bool> c)
-    {
-        if (Any(a, b) == true)
-            return true;
-
-        return c.Invoke();
-    }
-
-    public static bool Any(Func<bool> a, Func<bool> b, Func<bool> c, Func<bool> d)
-    {
-        if (Any(a, b, c) == true)
-            return true;
-
-        return d.Invoke();
-    }
-
-    public static bool Any(Func<bool> a, Func<bool> b, Func<bool> c, Func<bool> d, Func<bool> e)
-    {
-        if (Any(a, b, c, d) == true)
-            return true;
-
-        return e.Invoke();
-    }
-
-}
-
-public sealed class Thinker<TEnum, TOwner> where TEnum : struct, Enum
-{
- 
-    private readonly Dictionary<TEnum, AIState<TEnum, TOwner>> _bindings = new Dictionary<TEnum, AIState<TEnum, TOwner>>();
-    private readonly TOwner _owner;
-    private bool _isFirstThink;
-
-    public Thinker(TOwner owner)
-    {
-        _owner = owner;
-    }
-
-    public TEnum CurrentKey { get; private set; }
-    public AIState<TEnum, TOwner> CurrentState => _bindings[CurrentKey];
-
-    public Thinker<TEnum, TOwner> RegisterState(TEnum key, AIState<TEnum, TOwner> state)
-    {
-        if (_bindings.ContainsKey(key))
-            throw new Exception($"Thinker already contains binding for {key}.");
-        _bindings.Add(key, state);
-        return this;
-    }
-
-    public void Think()
-    {
-        if (_isFirstThink)
-        {
-            _isFirstThink = false;
-            CurrentState.OnEnterState(_owner);
-        }
-
-        var previousState = CurrentState;
-        var previousKey = CurrentKey;
-        CurrentKey = CurrentState != null ?
-                 CurrentState.Think(_owner) :
-                 CurrentKey;
-
-        if (!Equals(CurrentKey, previousKey))
-            CurrentState?.OnExitState(_owner);
-    }
-
-}
-
-public abstract class AIState<TEnum, TOwner> where TEnum : struct, Enum
-{
-    public virtual void OnEnterState(TOwner owner) { }
-    public virtual void OnExitState(TOwner owner) { }
-    public abstract TEnum Think(TOwner owner);
-
-}
-
-public sealed class AITaskExecuter<TOwner>
-{
-
-    public delegate AITask<TOwner> TaskGetter();
-
-    private readonly TOwner _owner;
-    private readonly TaskGetter _taskGetter;
-    private AITask<TOwner> _currentTask;
-    private TimeSince _timeSinceLastThink = TimeSince.Never;
-
-    public AITaskExecuter(TOwner owner, TaskGetter taskGetter)
-    {
-        _owner = owner;
-        _taskGetter = taskGetter;
-    }
-
-    public bool HasTask => _currentTask != null;
-
-    public void Run(AITask<TOwner> task)
-    {
-        _currentTask = task;
-        _currentTask.Setup(_owner);
-    }
-
-    public void Update()
-    {
-        if (_timeSinceLastThink < 0.2)
-            return;
-
-        _timeSinceLastThink = TimeSince.Now();
-
-        if (HasTask == false)
-            _currentTask = _taskGetter();
-
-        if (HasTask == false)
-            return;
-
-        _currentTask.Think();
-
-        if (_currentTask.IsComplete())
-            _currentTask = null;
-    }
-
-}
-
-public abstract class AITask<TOwner>
-{
-    protected TOwner Owner { get; private set; }
-
-    public void Setup(TOwner owner)
-    {
-        Owner = owner;
-    }
-
-    public virtual float GetSpeedMultiplier() => 1f;
-    public abstract bool IsComplete();
-    public abstract Vector3 GetLocation();
-    public virtual void Think() { }
-
-}
-
-public sealed class InvestigateLocation : AITask<NewZombie>
-{
-
-    private readonly Vector3 _location;
-
-    public InvestigateLocation(Vector3 location)
-    {
-        _location = location;
-    }
-
-    public override Vector3 GetLocation()
-    {
-        return _location;
-    }
-
-    public override bool IsComplete()
-    {
-        return Vector3.Distance(Owner.transform.position, _location) < 0.2f;
-    }
-
-}
-
-public sealed class Follow : AITask<NewZombie>
-{
-
-    private readonly PlayerCharacter _target;
-
-    public override Vector3 GetLocation()
-    {
-        return _target.transform.position;
-    }
-
-    public override bool IsComplete()
-    {
-        return _target.IsDead;
-    }
-
-    public override void Think()
-    {
-        Owner.TryAttack();
-    }
-
-}
-
-public sealed class NewZombie : MonoBehaviour
-{
-
-    [SerializeField] private Sensor _visualSensor;
-    [SerializeField] private SoundsSensor _soundSensor;
-
-    private AITaskExecuter<NewZombie> _taskExecuter;
-
-    private PlayerCharacter _player;
-    private RoomInfo[] _rooms;
-
-    private float TargetDistance => Vector3.Distance(transform.position, _player.transform.position);
-    private float TargetAngle => FlatVector.Angle(transform.forward.Flat(), (_player.transform.position - transform.position).normalized.Flat());
-
-    public void Setup(PlayerCharacter player, RoomInfo[] rooms)
-    {
-        _player = player;
-        _visualSensor.SetTarget(player.gameObject);
-        _rooms = rooms;
-    }
-
-    private void Awake()
-    {
-        _visualSensor.TargetSpotted += OnTargetSpotted;
-        _soundSensor.Perceived += OnSoundPerceived;
-        _taskExecuter = new AITaskExecuter<NewZombie>(this, GetNextTask);
-    }
-
-    private void OnTargetSpotted()
-    {
-        throw new NotImplementedException();
-    }
-
-    private void Update()
-    {
-        _taskExecuter.Update();
-    }
-
-    public void TryAttack()
-    {
-
-    }
-
-    private void OnSoundPerceived(SoundEvent sound)
-    {
-        _taskExecuter.Run(new InvestigateLocation(sound.Position));
-    }
-
-    private AITask<NewZombie> GetNextTask()
-    {
-        //return new InvestigateLocation();
-        return null;
-    }
 
 }

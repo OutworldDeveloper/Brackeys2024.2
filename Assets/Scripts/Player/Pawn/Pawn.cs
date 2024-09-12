@@ -59,6 +59,8 @@ public abstract class Pawn : MonoBehaviour
         _actions.Add(action);
     }
 
+    public virtual Transform CreateHud() => null;
+
 }
 
 public enum CameraTransition

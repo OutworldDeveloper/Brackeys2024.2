@@ -4,6 +4,10 @@ using UnityEngine;
 public static class Items
 {
 
+    public const string CHEESE_ID = "Cheese";
+    public const string RAT_ID = "Rat";
+    public const string COOKED_RAT_ID = "CookedRat";
+
     private static readonly Dictionary<string, Item> _items = new Dictionary<string, Item>();
     private static readonly List<Item> _all = new List<Item>();
                             

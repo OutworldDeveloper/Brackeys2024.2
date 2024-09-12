@@ -16,6 +16,7 @@ public class Sensor : MonoBehaviour
     [SerializeField] private LayerMask _occlusionLayers;
     [SerializeField] private float _checkRate = 0.2f;
     [SerializeField] private float _checkOffsetY = 1.5f;
+    [SerializeField] private Transform _sensorRoot;
 
     private TimeSince _timeSinceLastCheck;
     private Transform _target;
@@ -59,7 +60,7 @@ public class Sensor : MonoBehaviour
 
         float distance = Vector3.Distance(origin, destination);
 
-        float deltaAngle = Vector3.Angle(direction, transform.forward);
+        float deltaAngle = Vector3.Angle(direction, _sensorRoot.forward);
         if (deltaAngle > _angle && distance > _detectRadius)
             return false;
 
@@ -75,10 +76,13 @@ public class Sensor : MonoBehaviour
 
     private void OnDrawGizmosSelected()
     {
+        if (_sensorRoot == null)
+            return;
+
         Gizmos.DrawWireSphere(transform.position, _radius);
         Gizmos.DrawWireSphere(transform.position, _detectRadius);
-        Gizmos.DrawRay(transform.position, Quaternion.AngleAxis(_angle / 2f, Vector3.up) * transform.forward * _radius);
-        Gizmos.DrawRay(transform.position, Quaternion.AngleAxis(-_angle / 2f, Vector3.up) * transform.forward * _radius);
+        Gizmos.DrawRay(transform.position, Quaternion.AngleAxis(_angle / 2f, Vector3.up) * _sensorRoot.forward * _radius);
+        Gizmos.DrawRay(transform.position, Quaternion.AngleAxis(-_angle / 2f, Vector3.up) * _sensorRoot.forward * _radius);
     }
 
 }

@@ -1,11 +1,10 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public sealed class StormController : MonoBehaviour
 {
 
-    [SerializeField] private Storm[] _storms;
+    [SerializeField] private StormPicker _stormPicker;
     [SerializeField] private MinMax<float> _firstStormDelay = new(10, 10);
     [SerializeField] private MinMax<float> _stormDelay = new(40, 60);
 
@@ -35,10 +34,16 @@ public sealed class StormController : MonoBehaviour
         if (_timeUntilNextStorm > 0)
             return;
 
-        _activeStorm = _storms[Randomize.Index(_storms.Length)];
+        _activeStorm = _stormPicker.GetNextStorm();
         _activeStorm.BeginStorm();
         Notification.ShowDebug($"Storm {_activeStorm.GetType().Name} started!", 4f);
     }
+
+}
+
+public abstract class StormPicker : MonoBehaviour
+{
+    public abstract Storm GetNextStorm();
 
 }
 

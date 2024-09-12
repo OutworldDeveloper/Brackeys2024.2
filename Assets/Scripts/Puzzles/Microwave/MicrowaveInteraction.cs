@@ -1,0 +1,67 @@
+﻿using UnityEngine;
+
+public sealed class MicrowaveInteraction : Interaction
+{
+    public override string Text => _microwave.ContainsItem ? "Take" : "Insert";
+
+    private Microwave _microwave;
+
+    private void Awake()
+    {
+        _microwave = GetComponentInParent<Microwave>();
+    }
+
+    public override bool IsAvaliable(PlayerCharacter player)
+    {
+        return base.IsAvaliable(player);
+    }
+
+    public override void Perform(PlayerCharacter player)
+    {
+        if (_microwave.ContainsItem)
+        {
+            player.Inventory.AddItem(_microwave.TakeOut());
+            return;
+        }
+
+        if (player.Inventory.IsEmpty)
+            Notification.Show("I have nothing to insert");
+        else
+            player.Player.TryOpenItemSelection(new MicrowaveSelector(_microwave));
+    }
+
+    private sealed class MicrowaveSelector : ItemSelector
+    {
+
+        private readonly Microwave _microwave;
+
+        public MicrowaveSelector(Microwave microwave)
+        {
+            _microwave = microwave;
+        }
+
+        public override bool CanAccept(Item item)
+        {
+            return item.name == Items.RAT_ID;
+        }
+
+        public override void Select(Inventory inventory, Item item)
+        {
+            inventory.RemoveItem(item);
+            _microwave.InsertRat();
+        }
+
+        public override string GetRejectionReason(Item item)
+        {
+            if (item.name == Items.CHEESE_ID)
+                return "I don't need melted cheese";
+
+            if (item.name == Items.COOKED_RAT_ID)
+                return "It's already cooked enough";
+
+            return base.GetRejectionReason(item);
+        }
+
+    }
+
+}

@@ -8,6 +8,7 @@ public sealed class PlayerCharacter : Pawn
 {
 
     public event Action Damaged;
+    public event Action DamagedMental;
     public event Action Died;
 
     [SerializeField] private Transform _head;
@@ -17,6 +18,7 @@ public sealed class PlayerCharacter : Pawn
     [SerializeField] private float _speed;
     [SerializeField] private float _jumpForce;
     [SerializeField] private float _maxHealth = 5f;
+    [SerializeField] private float _maxMentalHealth = 100f;
     [SerializeField] private bool _allowJumping;
     [SerializeField] private bool _allowCrouching;
     [SerializeField] private float _crouchedCameraHeight = -0.75f;
@@ -37,6 +39,11 @@ public sealed class PlayerCharacter : Pawn
     [SerializeField] private Sound _stepSoundWater;
     [SerializeField] private AudioSource _stepSource;
 
+    [SerializeField] private Sound _splashSound;
+
+    [SerializeField] private float _targetToZeroTime = 0.25f;
+    [SerializeField] private float _shakeToTargetTime = 0.25f;
+
     private CharacterController _controller;
     private Vector3 _velocityXZ;
     private float _velocityY;
@@ -44,6 +51,8 @@ public sealed class PlayerCharacter : Pawn
 
     private readonly List<CharacterModifier> _modifiers = new List<CharacterModifier>();
     private TimeSince _timeSinceLastDamage = TimeSince.Never;
+    private TimeSince _timeSinceLastMentalDamage = TimeSince.Never;
+
     private PlayerInput _currentInput;
 
     private float _defaultCameraHeight;
@@ -65,13 +74,21 @@ public sealed class PlayerCharacter : Pawn
     private Vector3 _delayedVelocity;
     private float _stepsTimer;
 
+    private float _targetShakeStrenght;
+    private float _targetShakeVelocity;
     private float _shakeStrenght;
+    private float _shakeVelocity;
+
+    // For water splashes
+    private bool _wasInWater;
 
     public PlayerInteraction Interactor => _interactor;
     public Inventory Inventory => _inventory;
     public bool IsDead { get; private set; }
     public float MaxHealth => _maxHealth;
     public float Health { get; private set; }
+    public float MaxMentalHealth => _maxMentalHealth;
+    public float MentalHealth { get; private set; }
     public Vector3 HorizontalVelocity => _velocityXZ;
     public bool IsGrounded => _controller.isGrounded;
     public bool IsCrouching => _isCrouching;
@@ -88,6 +105,7 @@ public sealed class PlayerCharacter : Pawn
         _headPosition = _head.localPosition;
 
         Health = _maxHealth;
+        MentalHealth = _maxMentalHealth;
 
         ApplyModifier(new SpawnBlockModifier(), 0.4f);
 
@@ -122,11 +140,19 @@ public sealed class PlayerCharacter : Pawn
 
     private void Update()
     {
+        var isInWater = IsInWater();
+
+        if (_wasInWater == false && isInWater == true && _velocityY < -5f)
+            _splashSound.Play(_stepSource);
+
+        _wasInWater = isInWater;
+
         // Used for steps and animations
         _delayedVelocity = Vector3.Lerp(_delayedVelocity, _velocityXZ, Time.deltaTime * 10f);
 
         // Camera shake
-        _shakeStrenght = Mathf.Lerp(_shakeStrenght, 0f, Time.deltaTime * 10f);
+        _targetShakeStrenght = Mathf.SmoothDamp(_targetShakeStrenght, 0f, ref _targetShakeVelocity, _targetToZeroTime);
+        _shakeStrenght = Mathf.SmoothDamp(_shakeStrenght, _targetShakeStrenght, ref _shakeVelocity, _shakeToTargetTime);
 
         // Steps
         _stepsTimer += _delayedVelocity.magnitude / 2f * 2f * Time.deltaTime;
@@ -135,11 +161,11 @@ public sealed class PlayerCharacter : Pawn
         {
             _stepsTimer = 0f;
 
-            if (_controller.isGrounded == true && IsInWater() == false)
+            if (_controller.isGrounded == true)
             {
                 var stepSound = IsFeetInWater() ? _stepSoundWater : _isCrouching ? _stepSoundCrouching : _stepSound;
                 stepSound.Play(_stepSource);
-                float stepSoundRange = _isCrouching ? 4f : 10f;
+                float stepSoundRange = _isCrouching ? 0f : 10f;
                 AISoundEvents.Fire(gameObject, transform.position + Vector3.up, stepSoundRange);
             }
         }
@@ -220,7 +246,12 @@ public sealed class PlayerCharacter : Pawn
         Died?.Invoke();
         GetComponent<Animator>().SetBool("dead", true);
         _modifiers.Clear();
-        //ScreenFade.FadeOut();
+        ScreenFade.FadeOut();
+    }
+
+    public void ApplyShake(float strenght)
+    {
+        _targetShakeStrenght = Mathf.Max(_targetShakeStrenght, strenght);
     }
 
     public T ApplyModifier<T>(T modifier, float duration) where T : CharacterModifier
@@ -267,6 +298,19 @@ public sealed class PlayerCharacter : Pawn
         }
     }
 
+    public void ApplyMentalDamage(float damage)
+    {
+        if (IsDead == true)
+            return;
+
+        _timeSinceLastMentalDamage = TimeSince.Now();
+        MentalHealth = MathF.Max(0f, MentalHealth - damage);
+        DamagedMental?.Invoke();
+
+        if (MentalHealth <= 0f)
+            Kill();
+    }
+
     private PlayerInput GatherInput()
     {
         var playerInput = new PlayerInput();
@@ -281,9 +325,9 @@ public sealed class PlayerCharacter : Pawn
         }.normalized;
 
         playerInput.WantsJump = Input.GetKeyDown(KeyCode.Space);
-        playerInput.WantsCrouch = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.C);
+        playerInput.WantsCrouch = Input.GetKey(KeyCode.LeftShift);
 
-        playerInput.SwimDirection = Input.GetKey(KeyCode.Space) ? 1 : Input.GetKey(KeyCode.LeftControl) ? -1 : 0;
+        playerInput.SwimDirection = Input.GetKey(KeyCode.Space) ? 1 : Input.GetKey(KeyCode.LeftShift) ? -1 : 0;
 
         return playerInput;
     }
@@ -345,13 +389,15 @@ public sealed class PlayerCharacter : Pawn
             transform.TransformDirection(input.Direction) * GetSpeed() :
             Vector3.zero;
 
-        _velocityXZ = Vector3.MoveTowards(_velocityXZ, desiredVelocity, 25f * Time.deltaTime);
+        float acceleration = IsInWater() ? 5f : 25f;
+
+        _velocityXZ = Vector3.MoveTowards(_velocityXZ, desiredVelocity, acceleration * Time.deltaTime);
 
         if (IsInWater() == false)
         {
             if (_controller.isGrounded == true)
             {
-                _velocityY = (input.WantsJump && CanJump()) ? _jumpForce : -9.8f;
+                _velocityY = (input.WantsJump && CanJump()) ? _jumpForce : -2f; // prev -9.8f
             }
             else
             {

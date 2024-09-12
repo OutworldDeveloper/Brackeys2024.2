@@ -137,6 +137,7 @@ public sealed class Notification
         if (Application.isEditor == false)
             return;
 
+        Debug.Log(text);
         Show($"[Debug] {text}", duration);
     }
 

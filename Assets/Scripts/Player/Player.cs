@@ -21,8 +21,13 @@ public sealed class Player : MonoBehaviour
 
     [SerializeField] private AnimationCurve _cameraTransitionCurve;
 
+    [SerializeField] private RectTransform _hudParent;
+
     private CameraState _currentState;
     private CameraState _lastCameraState;
+
+    // Hud from other pawns (not character)
+    private Transform _currentHud;
 
     public UI_PanelsManager Panels => _panels;
     public PawnStack PawnStack { get; private set; }
@@ -35,16 +40,11 @@ public sealed class Player : MonoBehaviour
         _character.Died += OnCharacterDied;
     }
 
-    private void Start()
-    {
-
-    }
-
     private void Update()
     {
         UpdateState();
 
-        if (Input.GetKeyDown(KeyCode.Escape) == true)
+        if (Input.GetKeyDown(KeyCode.Escape) == true || Input.GetKeyDown(KeyCode.Tab) == true)
             HandleEscapeButton();
 
         if (_panels.HasActivePanel == true)
@@ -104,7 +104,16 @@ public sealed class Player : MonoBehaviour
         _lastCameraState = _currentState;
 
         if (PawnStack.CameraTransition == CameraTransition.Fade)
-            ScreenFade.FadeOutFor(0.2f);
+            ScreenFade.FadeOutFor(0.6f);
+
+        // Custom Huds
+        if (_currentHud != null)
+            Destroy(_currentHud.gameObject);
+
+        _currentHud = PawnStack.ActivePawn.CreateHud();
+
+        if (_currentHud != null)
+            _currentHud.SetParent(_hudParent, false);
     }
 
     private void OnCharacterDamaged()
@@ -114,7 +123,7 @@ public sealed class Player : MonoBehaviour
 
     private void OnCharacterDied()
     {
-        Delayed.Do(() => _panels.InstantiateAndOpenFrom(_deathScreen), 2.75f);
+        Delayed.Do(() => _panels.InstantiateAndOpenFrom(_deathScreen), 1.75f);
     }
 
     private void UpdateState()
@@ -147,11 +156,14 @@ public sealed class Player : MonoBehaviour
         _currentState = state;
     }
 
-    public UI_InventorySelectScreen OpenItemSelection(ItemSelector selector)
+    public bool TryOpenItemSelection(ItemSelector selector)
     {
+        if (_character.Inventory.IsEmpty)
+            return false;
+
         var selectionScreen = Panels.InstantiateAndOpenFrom(_itemSelectionScreen);
         selectionScreen.Setup(_character.Inventory, selector);
-        return selectionScreen;
+        return true;
     }
 
 }

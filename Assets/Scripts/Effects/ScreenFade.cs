@@ -4,7 +4,8 @@ using UnityEngine.Rendering;
 public sealed class ScreenFade : MonoBehaviour
 {
 
-    public const float FadeSpeed = 1.7f;
+    public const float FADE_SPEED = 1.7f;
+    public const string FADE_PARAMETER_NAME = "_Fade";
 
     private static int _fadedTimes = 0;
     private static float _fadeInTime = float.NegativeInfinity;
@@ -28,25 +29,35 @@ public sealed class ScreenFade : MonoBehaviour
         _fadedTimes--;
     }
 
-    [SerializeField] private Volume _fadeVolume;
+    [SerializeField] private Material _fadeMaterial;
+    private float _currentFade = 0f;
 
     private void Start()
     {
-        _fadeVolume.weight = IsFadedOut ? 0f : 1f;
+        _currentFade = IsFadedOut ? 0f : 1f;
+    }
+
+    private void OnDestroy()
+    {
+        _fadedTimes = 0;
+        _fadeInTime = float.NegativeInfinity;
+        _fadeMaterial.SetFloat(FADE_PARAMETER_NAME, 0f);
     }
 
     private void Update()
     {
         if (IsFadedOut == true)
         {
-            if (_fadeVolume.weight < 1f)
-                _fadeVolume.weight += Time.deltaTime * FadeSpeed;
+            if (_currentFade < 1f)
+                _currentFade += Time.deltaTime * FADE_SPEED;
         }
         else
         {
-            if (_fadeVolume.weight > 0f)
-                _fadeVolume.weight -= Time.deltaTime * FadeSpeed;
+            if (_currentFade > 0f)
+                _currentFade -= Time.deltaTime * FADE_SPEED;
         }
+
+        _fadeMaterial.SetFloat(FADE_PARAMETER_NAME, _currentFade);
     }
 
 }

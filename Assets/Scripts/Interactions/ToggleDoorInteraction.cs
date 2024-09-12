@@ -26,7 +26,7 @@ public sealed class ToggleDoorInteraction : Interaction
 
         if (_door.IsLocked == true && player.Inventory.IsEmpty == false)
         {
-            player.Player.OpenItemSelection(new KeySelector(_door));
+            player.Player.TryOpenItemSelection(new KeySelector(_door));
         }
 
         _door.TryOpen();
