@@ -44,7 +44,7 @@ public sealed class Door : MonoBehaviour
     private int _blockedTimes;
     private bool _isLockedByKey; 
     private TimeSince _timeSinceLastKnocked = new TimeSince(float.NegativeInfinity);
-    private readonly List<DoorBlocker> _blockers = new List<DoorBlocker>();
+    private readonly List<IDoorBlocker> _blockers = new List<IDoorBlocker>();
 
     public bool IsOpen => _isOpen;
     public bool IsLocked => _isLockedByKey == true;
@@ -201,12 +201,12 @@ public sealed class Door : MonoBehaviour
         _knockSound.Play(_audioSource);
     }
 
-    public void RegisterBlocker(DoorBlocker blocker)
+    public void RegisterBlocker(IDoorBlocker blocker)
     {
         _blockers.Add(blocker);
     }
 
-    public void UnregisterBlocker(DoorBlocker blocker)
+    public void UnregisterBlocker(IDoorBlocker blocker)
     {
         _blockers.Remove(blocker);
     }
@@ -309,8 +309,18 @@ public enum DoorEvent
     Closed,
 }
 
+public interface IDoorBlocker
+{
+    public bool IsActive();
+    public string GetBlockReason() => $"Locked!";
+    public bool HasCustomSound() => false;
+    public Sound GetCustomSound() => null;
+    public void OnBlockedOpening() { }
 
-public abstract class DoorBlocker : MonoBehaviour
+}
+
+
+public abstract class DoorBlocker : MonoBehaviour, IDoorBlocker
 {
     public virtual bool IsActive() => true;
     public virtual string GetBlockReason() => $"Locked!";

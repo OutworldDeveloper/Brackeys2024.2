@@ -52,7 +52,7 @@ public class UI_YesNoWindow : UI_Panel
 
     public override bool CanRemoveAtWill()
     {
-        return _canClose;
+        return true;
     }
 
 }

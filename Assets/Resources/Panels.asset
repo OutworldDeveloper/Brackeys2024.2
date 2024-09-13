@@ -15,3 +15,6 @@ MonoBehaviour:
   _selectionScreen:
     _asset: {fileID: 3744234377029252174, guid: a72218028657d0e4f84408bae65a95fc,
       type: 3}
+  _confirmationScreen:
+    _asset: {fileID: 1478400666999962575, guid: d11756c919c16fc4b8b3d821c28feb27,
+      type: 3}

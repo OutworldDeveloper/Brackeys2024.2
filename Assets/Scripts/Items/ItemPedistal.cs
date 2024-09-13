@@ -9,7 +9,7 @@ public class ItemPedistal : MonoBehaviour
 
     private Transform _model;
 
-    public void Show(Item item)
+    public void Place(Item item)
     {
         DisplayItem = item;
         Refresh();
@@ -31,7 +31,7 @@ public class ItemPedistal : MonoBehaviour
         if (DisplayItem == null)
             return;
 
-        _model = DisplayItem.Model.Instantiate(transform.position, transform.forward);
+        _model = DisplayItem.Model.Instantiate();
         _model.SetParent(transform, false);
     }
 

@@ -1416,6 +1416,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _duration: 5
+  _itemPedistal: {fileID: 1332186749553947262}
 --- !u!1 &7953832478235308627
 GameObject:
   m_ObjectHideFlags: 0

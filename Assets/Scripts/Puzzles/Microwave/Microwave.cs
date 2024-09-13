@@ -10,19 +10,11 @@ public class Microwave : DoorBlocker
     [SerializeField] private float _duration = 5f;
     [SerializeField] private ItemPedistal _itemPedistal;
 
-
     private TimeSince _timeSinceLastStart = TimeSince.Never;
 
     public Door Door { get; private set; }
-    public ContentState Content { get; private set; }
     public bool IsOn { get; private set; }
-
-    public bool ContainsItem => Content switch
-    {
-        ContentState.Rat => true,
-        ContentState.CookedRat => true,
-        _ => false,
-    };
+    public bool ContainsItem => _itemPedistal.DisplayItem != null;
 
     private void Awake()
     {
@@ -40,28 +32,24 @@ public class Microwave : DoorBlocker
         IsOn = false;
         Door.UnregisterBlocker(this);
 
-        if (Content == ContentState.Rat)
-            Content = ContentState.CookedRat;
+        if (_itemPedistal.DisplayItem == null)
+            return;
+
+        if (_itemPedistal.DisplayItem.name == Items.RAT_ID)
+            _itemPedistal.Place(Items.Get(Items.COOKED_RAT_ID));
     }
 
-    public void InsertRat()
+    public void InsertItem(Item item)
     {
-        Content = ContentState.Rat;
+        _itemPedistal.Place(item);
     }
 
     public Item TakeOut()
     {
-        switch (Content)
-        {
-            case ContentState.Rat:
-                Content = ContentState.Empty;
-                return Items.Get(Items.RAT_ID);
-            case ContentState.CookedRat:
-                Content = ContentState.Empty;
-                return Items.Get(Items.COOKED_RAT_ID);
-        }
+        if (ContainsItem == false)
+            throw new Exception("Cannot take out an item from an empty microwave!");
 
-        throw new Exception("Cannot take out an item from an empty microwave!");
+        return _itemPedistal.Remove();
     }
 
     public void TurnOn()
@@ -78,13 +66,6 @@ public class Microwave : DoorBlocker
     public override string GetBlockReason()
     {
         return "I shouldn't open it while it cooks";
-    }
-
-    public enum ContentState
-    {
-        Empty,
-        Rat,
-        CookedRat,
     }
 
 }

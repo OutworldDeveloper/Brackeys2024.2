@@ -15,3 +15,6 @@ MonoBehaviour:
   <DisplayName>k__BackingField: Rat
   <Sprite>k__BackingField: {fileID: 21300000, guid: 8ee21d54686783545bd4c0fd4a9ac7fd,
     type: 3}
+  <Model>k__BackingField:
+    _asset: {fileID: 8363159015492903491, guid: 8d3a1e6fc1124394895716fa340d27c2,
+      type: 3}

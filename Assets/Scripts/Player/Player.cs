@@ -1,15 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
-using UnityEngine.Rendering;
-using UnityEngine.Rendering.Universal;
-using UnityEngine.TextCore.Text;
-using static UnityEngine.Rendering.DebugUI;
 
 [DefaultExecutionOrder(-1)]
 public sealed class Player : BasePlayer
 {
+
+    public static bool IsFirstTime = true;
 
     [SerializeField] private PlayerCharacter _character;
     [SerializeField] private GameObject _hud;
@@ -20,6 +17,21 @@ public sealed class Player : BasePlayer
     {
         _character.Damaged += OnCharacterDamaged;
         _character.Died += OnCharacterDied;
+    }
+
+    protected override void Start()
+    {
+        base.Start();
+
+        if (IsFirstTime == false)
+            return;
+
+        IsFirstTime = false;
+
+        OpenPanel(Panels.ConfirmationScreen).
+            Setup("Hello!", 
+            "Please use Tab instead of Esc since it's a WEBGL game. Use Shift to sneak.", 
+            () => { }, false);
     }
 
     protected override GameplayState GetDefaultState()

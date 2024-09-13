@@ -32,10 +32,6 @@ public sealed class MicrowaveInteraction : Interaction
             player.Player.OpenPanel(Panels.SelectionScreen).
                 Setup(player.Inventory, new MicrowaveSelector(_microwave)).
                 SetVirtualCamera(_virtualCamera, CameraTransition.Move);
-
-            //(player.Player as Player)?.
-            //    OpenItemSelection(new MicrowaveSelector(_microwave)).
-            //    SetVirtualCamera(_virtualCamera, CameraTransition.Move);
     }
 
     private sealed class MicrowaveSelector : ItemSelector
@@ -56,7 +52,7 @@ public sealed class MicrowaveInteraction : Interaction
         public override void Select(Inventory inventory, Item item)
         {
             inventory.RemoveItem(item);
-            _microwave.InsertRat();
+            _microwave.InsertItem(item);
         }
 
         public override string GetRejectionReason(Item item)

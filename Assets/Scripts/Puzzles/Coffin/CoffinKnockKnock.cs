@@ -7,6 +7,7 @@ public sealed class CoffinKnockKnock : MonoBehaviour
     [SerializeField] private Sound _knockSound;
     [SerializeField] private AudioSource _source;
     [SerializeField] private MinMax<float> _knockDelay;
+    [SerializeField] private Door _door;
 
     private TimeUntil _timeUntilNextKnockAttempt;
 
@@ -22,6 +23,12 @@ public sealed class CoffinKnockKnock : MonoBehaviour
             _timeUntilNextKnockAttempt = new TimeUntil(Time.time + Randomize.Float(_knockDelay));
 
             if (_roomTrigger.HasPlayerInside)
+                return;
+
+            if (_door.IsOpen || _door.IsAnimating)
+                return;
+
+            if (Water.Level > transform.position.y + 0.3f)
                 return;
 
             _knockSound.Play(_source);

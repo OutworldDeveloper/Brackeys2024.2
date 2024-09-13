@@ -12,6 +12,7 @@ public sealed class UI_PauseMenu : UI_Panel
     [SerializeField] private RectTransform _buttonsPanel;
     [SerializeField] private Transform _buttonsParent;
     [SerializeField] private Prefab<UI_YesNoWindow> _yesNoWindow;
+    [SerializeField] private Prefab<UI_Panel> _settingsPanel;
 
     private Sequence _sequeence;
 
@@ -47,10 +48,15 @@ public sealed class UI_PauseMenu : UI_Panel
 
     public void RestartButton()
     {
-        Player.OpenPanel(_yesNoWindow).Setup("Restart level?", string.Empty, () =>
+        Player.OpenPanel(_yesNoWindow).Setup("Restart?", string.Empty, () =>
         {
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         });
+    }
+
+    public void SettingsButton()
+    {
+        Player.OpenPanel(_settingsPanel);
     }
 
 }
