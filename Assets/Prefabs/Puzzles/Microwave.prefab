@@ -1675,7 +1675,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4c580a3a4dabb4548b0efa02394d2c87, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _duration: 5
+  _duration: 15
   _itemPedistal: {fileID: 1332186749553947262}
   _workSource: {fileID: 8329345962617522071}
   _buttonSource: {fileID: 4621465233943719082}

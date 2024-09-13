@@ -415,7 +415,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b77878b00f0b0cb4d84c446f090c7c3f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _speed: 2.5
+  _speed: 1.4
+  _sprintSpeed: 2.5
   _attackDistance: 1.75
   _attackLandDistance: 2
   _baseRotationSpeed: 2
@@ -593,7 +594,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b50776e5e56a07b46a5a5bc4c134f355, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _hearingRadius: 15
+  _hearingRadius: 10
   _hearingChance:
     serializedVersion: 2
     m_Curve:

@@ -24,6 +24,7 @@ public class Zombie : MonoBehaviour
     }
 
     [SerializeField] private float _speed = 2f;
+    [SerializeField] private float _sprintSpeed = 3f;
     [SerializeField] private float _attackDistance = 2.25f;
     [SerializeField] private float _attackLandDistance = 1.5f;
     [SerializeField] private float _baseRotationSpeed = 2f;
@@ -198,7 +199,6 @@ public class Zombie : MonoBehaviour
 
     private void OnRoamingStart()
     {
-        Notification.ShowDebug("OnRoamingStart");
         InvestigatePoint(SelectRoamingDestination());
     }
 
@@ -221,9 +221,10 @@ public class Zombie : MonoBehaviour
         }
 
         return randomizer.GetRandomItem();
+    }
 
-        //
-
+    private Vector3 SelectRoamingDestinatioWeighted()
+    {
         List<Vector3> potentialDestinations = new List<Vector3>(_locations.Length);
 
         foreach (var roomInfo in _locations)
@@ -263,6 +264,8 @@ public class Zombie : MonoBehaviour
 
     private void OnEngageThink()
     {
+        _walkState = WalkState.Sprint;
+
         if (_sensor.IsTargetVisible == false && _sensor.TimeSinceTargetLost > _timeToLostTarget)
         {
             InvestigatePoint(_lastKnownPlayerLocation);
@@ -376,7 +379,7 @@ public class Zombie : MonoBehaviour
 
     private float GetSpeed() => _walkState switch
     {
-        WalkState.Sprint => _speed * 1.5f,
+        WalkState.Sprint => _sprintSpeed,
         WalkState.Escaping => 5f,
         _ => _speed,
     };

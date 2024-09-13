@@ -5,11 +5,11 @@ using UnityEngine;
 public class LightsController : MonoBehaviour
 {
 
-    [SerializeField] private Lamp[] _lamps = new Lamp[0];
     [SerializeField] private AudioSource _outSource;
     [SerializeField] private Sound _outSound;
     [SerializeField] private Sound _inSound;
 
+    private List<Lamp> _lamps = new List<Lamp>();
     private bool _shouldTurnOff = false;
     private bool _isOn = true;
     private TimeUntil _timeUntilTurnOff;
@@ -28,6 +28,15 @@ public class LightsController : MonoBehaviour
         _isOn = true;
         foreach (var lamp in _lamps) lamp.TurnOn();
         _inSound.Play(_outSource);
+    }
+
+    private void Awake()
+    {
+        foreach (var lamp in FindObjectsOfType<Lamp>())
+        {
+            if (lamp.DisabledDuringBlackout)
+                _lamps.Add(lamp);
+        }
     }
 
     private void Update()

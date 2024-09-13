@@ -20,6 +20,8 @@ public sealed class TV : MonoBehaviour
     [SerializeField] private Sound _startSound;
     [SerializeField] private AudioSource _startAudioSource;
 
+    [SerializeField] private bool _ignoreRoom;
+
     [SerializeField] private FinalDoorCode _codeToShow;
     [SerializeField] private Texture2D _textureA, _textureB, _textureD, _textureE, _textureF;
 
@@ -58,6 +60,8 @@ public sealed class TV : MonoBehaviour
     private void Update()
     {
         float desiredVolume = _roomTrigger.PlayerInside == true ? _desiredNoiseVolume : 0f;
+
+        desiredVolume = _ignoreRoom == true ? _desiredNoiseVolume : desiredVolume;
 
         if (_staticNoiseSource.volume < desiredVolume)
         {

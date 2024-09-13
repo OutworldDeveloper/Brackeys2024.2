@@ -7,12 +7,17 @@ public sealed class WaterStorm : Storm
     [SerializeField] private float _raiseDuration = 10f;
     [SerializeField] private float _holdDuration = 5f;
     [SerializeField] private float _returnDuration = 5f;
+    [SerializeField] private LightsController _ligths;
+    [SerializeField] private bool _disableLights;
 
     private State _currentState;
 
     protected override void OnStormStarted()
     {
         _currentState = State.Raise;
+
+        if (_disableLights)
+            _ligths.TurnOff();
     }
 
     public override bool UpdateStorm()
@@ -32,6 +37,8 @@ public sealed class WaterStorm : Storm
                 return false;
 
             default:
+                if (_disableLights)
+                    _ligths.TurnOn();
                 return true;
         }
     }
