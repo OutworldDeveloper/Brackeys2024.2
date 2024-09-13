@@ -216,3 +216,5 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _lightSource: {fileID: 3075660660766559331}
+  _disabledMaterial: {fileID: 2100000, guid: 1bbb4ff3a7224e7418dc55f4e7feafe1, type: 2}
+  _renderer: {fileID: 5312312763052713560}

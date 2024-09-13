@@ -9,7 +9,6 @@ public sealed class StormController : MonoBehaviour
     public event Action StateChanged;
 
     [SerializeField] private StormPicker _stormPicker;
-    [SerializeField] private MinMax<float> _firstStormDelay = new(10, 10);
     [SerializeField] private MinMax<float> _stormDelay = new(40, 60);
     [SerializeField] private Siren _siren;
     [SerializeField] private PlayerTrigger _startRoomTrigger;

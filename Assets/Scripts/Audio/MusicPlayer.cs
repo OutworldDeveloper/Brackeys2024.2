@@ -23,7 +23,7 @@ public class MusicPlayer : MonoBehaviour
 
     private void Update()
     {
-        _musicSource.volume = Mathf.MoveTowards(_musicSource.volume, ShouldPlay ? 1 : 0, Time.deltaTime);
+        _musicSource.volume = Mathf.MoveTowards(_musicSource.volume, ShouldPlay ? 1 : 0, Time.unscaledDeltaTime);
     }
 
     private void OnPlayerDied()

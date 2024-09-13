@@ -6,6 +6,8 @@ public struct Prefab<T> where T : Component
 
     [SerializeField] private T _asset;
 
+    public T Asset => _asset;
+
     public T Instantiate()
     {
         var instance = Object.Instantiate(_asset);

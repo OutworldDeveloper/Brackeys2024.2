@@ -7,7 +7,7 @@ public sealed class InventoryUI : MonoBehaviour
     [SerializeField] private PlayerCharacter _player;
     [SerializeField] private ItemDisplayUI _itemDisplayPrefab;
 
-    private readonly Dictionary<Item, ItemDisplayUI> _itemDisplays = new Dictionary<Item, ItemDisplayUI>();
+    private readonly List<ItemDisplayUI> _displays = new List<ItemDisplayUI>();
 
     private void OnEnable()
     {
@@ -24,38 +24,28 @@ public sealed class InventoryUI : MonoBehaviour
 
     private void OnItemAdded(Item item)
     {
-        if (_itemDisplays.ContainsKey(item) == true) // Do not create visuals for already existing item
-            return;
-
-        var display = Instantiate(_itemDisplayPrefab, transform, false);
-        display.Init(item);
-        _itemDisplays.Add(item, display);
+        Refresh();
     }
 
     private void OnItemRemoved(Item item)
     {
-        if (_player.Inventory.HasItem(item) == true) // Do not do anything if we still have item
-            return;
-
-        if (_itemDisplays.TryGetValue(item, out var display) == false)
-            return;
-
-        _itemDisplays.Remove(item);
-        Destroy(display.gameObject);
+        Refresh();
     }
 
     private void Refresh()
     {
-        foreach (var itemDisplay in _itemDisplays.Values)
+        foreach (var display in _displays)
         {
-            Destroy(itemDisplay.gameObject);
+            Destroy(display.gameObject);
         }
 
-        _itemDisplays.Clear();
+        _displays.Clear();
 
-        foreach (var item in _player.Inventory.Items)
+        foreach (var item in _player.Inventory)
         {
-            OnItemAdded(item);
+            var display = Instantiate(_itemDisplayPrefab, transform, false);
+            display.Init(item);
+            _displays.Add(display);
         }
     }
 

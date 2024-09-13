@@ -30,3 +30,18 @@ public struct TimeUntil
     public static implicit operator float(TimeUntil timeSince) => timeSince.Time - UnityEngine.Time.time;
 
 }
+
+public struct UnscaledTimeUntil
+{
+
+    public readonly float Time;
+
+    public UnscaledTimeUntil(float time)
+    {
+        Time = time;
+    }
+
+    public static implicit operator float(UnscaledTimeUntil timeUntil) => timeUntil.Time - UnityEngine.Time.unscaledDeltaTime;
+
+}
+

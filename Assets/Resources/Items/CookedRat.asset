@@ -16,5 +16,4 @@ MonoBehaviour:
   <Sprite>k__BackingField: {fileID: 21300000, guid: 8ee21d54686783545bd4c0fd4a9ac7fd,
     type: 3}
   <Model>k__BackingField:
-    _asset: {fileID: 8363159015492903491, guid: e9a1459b7c085854ba262f737bc7e8b6,
-      type: 3}
+    _asset: {fileID: 558328200895319389, guid: e9a1459b7c085854ba262f737bc7e8b6, type: 3}

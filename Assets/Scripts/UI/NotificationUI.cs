@@ -14,8 +14,6 @@ public sealed class NotificationUI : MonoBehaviour
 
     [SerializeField] private Color _highlightedColor = Color.yellow;
 
-    private TimeUntil _timeUntilHidden;
-    private bool _isNotificationShown;
     private Sequence _currentSequence;
 
     private void OnEnable()
@@ -34,34 +32,18 @@ public sealed class NotificationUI : MonoBehaviour
         ClearNotification();
     }
 
-    private void Update()
-    {
-        if (_isNotificationShown == false)
-            return;
-
-        if (_timeUntilHidden < 0f)
-        {
-            _currentSequence?.Kill();
-
-            _currentSequence = DOTween.Sequence();
-            _currentSequence.Append(_notificationGroup.DOFade(0f, 0.2f));
-
-            _isNotificationShown = false;
-        }
-    }
-
     private void OnNotificationSent(Notification notification)
     {
         ClearNotification();
         ConstructNotification(notification);
 
-        _isNotificationShown = true;
-        _timeUntilHidden = new TimeUntil(Time.time + notification.Duration);
+        _currentSequence.Kill();
 
-        _currentSequence?.Kill();
-
-        _currentSequence = DOTween.Sequence();
-        _currentSequence.Join(_notificationGroup.DOFade(1f, 0.4f).From(0f));
+        _currentSequence = DOTween.Sequence().
+            Append(_notificationGroup.DOFade(1f, 0.4f).From(0f)).
+            AppendInterval(notification.Duration).
+            Append(_notificationGroup.DOFade(0f, 0.4f)).
+            SetUpdate(true);
     }
 
     private void ClearNotification()

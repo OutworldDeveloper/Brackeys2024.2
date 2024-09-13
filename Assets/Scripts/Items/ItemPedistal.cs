@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -5,14 +6,20 @@ using UnityEngine;
 public class ItemPedistal : MonoBehaviour
 {
 
+    public event Action<Item> ItemPlaced;
+    public event Action ItemRemoved;
+    public event Action Updated;
+
     public Item DisplayItem { get; private set; }
 
-    private Transform _model;
+    private ItemModel _model;
 
     public void Place(Item item)
     {
         DisplayItem = item;
         Refresh();
+        ItemPlaced?.Invoke(DisplayItem);
+        Updated?.Invoke();
     }
 
     public Item Remove()
@@ -20,6 +27,8 @@ public class ItemPedistal : MonoBehaviour
         var item = DisplayItem;
         DisplayItem = null;
         Refresh();
+        ItemRemoved?.Invoke();
+        Updated?.Invoke();
         return item;
     }
 
@@ -32,7 +41,9 @@ public class ItemPedistal : MonoBehaviour
             return;
 
         _model = DisplayItem.Model.Instantiate();
-        _model.SetParent(transform, false);
+        _model.transform.SetParent(transform, false);
+        _model.EnableCollision(false);
+        _model.EnableGlow(false);
     }
 
 }

@@ -1,9 +1,10 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 [DefaultExecutionOrder(Order.BEFORE_PLAYER_CHARACTER)]
-public class Inventory : MonoBehaviour
+public class Inventory : MonoBehaviour, IEnumerable<Item>
 {
 
     public event Action<Item> ItemAdded;
@@ -36,5 +37,8 @@ public class Inventory : MonoBehaviour
         _items.Remove(item);
         ItemRemoved?.Invoke(item);
     }
+
+    public IEnumerator<Item> GetEnumerator() => _items.GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
 }

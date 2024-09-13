@@ -15,3 +15,5 @@ MonoBehaviour:
   <DisplayName>k__BackingField: Cheese
   <Sprite>k__BackingField: {fileID: 21300000, guid: 28b900acc5d659b4bab3133223e8497d,
     type: 3}
+  <Model>k__BackingField:
+    _asset: {fileID: 667025192084111686, guid: 50534405804cf8b4c90171c95f73f286, type: 3}

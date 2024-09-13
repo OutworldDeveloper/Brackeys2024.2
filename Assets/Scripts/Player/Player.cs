@@ -28,10 +28,10 @@ public sealed class Player : BasePlayer
 
         IsFirstTime = false;
 
-        OpenPanel(Panels.ConfirmationScreen).
-            Setup("Hello!", 
-            "Please use Tab instead of Esc since it's a WEBGL game. Use Shift to sneak.", 
-            () => { }, false);
+        //OpenPanel(Panels.ConfirmationScreen).
+        //    Setup("Hello", 
+        //    "Please use Tab instead of Esc since it's a WEBGL game. Use Shift to sneak.", 
+        //    () => { }, false);
     }
 
     protected override GameplayState GetDefaultState()

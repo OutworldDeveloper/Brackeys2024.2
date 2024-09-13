@@ -28,11 +28,11 @@ public sealed class MouseTrapInteraction : Interaction
 
         if (_mouseTrap.HasCheese == true)
         {
-            Notification.Show("Now I just need to wait a little", 3f);
+            Notification.Show("Now I just need to wait a little", 2f);
             return;
         }
 
-        Notification.Show("Empty. Not rat, no bait", 3f);
+        Notification.Show("Empty. Not rat, no bait", 1.5f);
 
         if (player.Inventory.IsEmpty == false)
             player.Player.OpenPanel(Panels.SelectionScreen).

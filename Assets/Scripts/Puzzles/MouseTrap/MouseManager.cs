@@ -27,7 +27,7 @@ public sealed class MouseManager : MonoBehaviour
 
     private void Update()
     {
-        if (_timeSinceLastCheck < 4f)
+        if (_timeSinceLastCheck < 3f)
             return;
 
         _timeSinceLastCheck = TimeSince.Now();
@@ -42,15 +42,20 @@ public sealed class MouseManager : MonoBehaviour
             if (distance < 5f)
                 continue;
 
-            FlatVector playerDirection = 
+            FlatVector playerDirection =
                 (mouseTrap.transform.position.Flat() - _playerCharacter.transform.position.Flat()).normalized;
 
             float dot = Vector3.Dot(playerDirection, _playerCharacter.transform.forward.Flat().normalized);
+            bool ignoreDot = distance > 15f;
 
-            if (dot > 0)
+            if (dot > 0 && ignoreDot == false)
                 continue;
 
-            mouseTrap.SpawnMouse();
+            if (Randomize.Chance(65))
+            {
+                mouseTrap.SpawnMouse();
+                return;
+            }
         }
     }
 

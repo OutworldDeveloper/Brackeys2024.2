@@ -317,7 +317,7 @@ MonoBehaviour:
   _source: {fileID: 5034790167670529030}
   _knockDelay:
     <Min>k__BackingField: 5
-    <Max>k__BackingField: 15
+    <Max>k__BackingField: 25
   _door: {fileID: 7255091299603940304}
 --- !u!1 &1542935339695313898
 GameObject:
