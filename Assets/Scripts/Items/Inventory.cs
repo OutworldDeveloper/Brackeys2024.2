@@ -26,10 +26,11 @@ public class Inventory : MonoBehaviour, IEnumerable<Item>
         return false;
     }
 
-    public void AddItem(Item item)
+    public void AddItem(Item item, bool anounce = true)
     {
         _items.Add(item);
-        ItemAdded?.Invoke(item);
+        if (anounce)
+            ItemAdded?.Invoke(item);
     }
 
     public void RemoveItem(Item item)

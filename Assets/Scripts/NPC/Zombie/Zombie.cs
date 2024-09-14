@@ -396,7 +396,7 @@ public class Zombie : MonoBehaviour
         speedModifier = _rotationSlowCurve.Evaluate(speedModifier);
 
         UnityEditor.Handles.Label(transform.position + Vector3.up * 2f, 
-            $"Think: {_thinkState.Current}, {_actionRunner}, SM: {speedModifier}");
+            $"Think: {_thinkState.Current}, {_actionRunner}, {_walkState}");
 #endif
     }
 
@@ -464,7 +464,7 @@ public class Zombie : MonoBehaviour
             if (targetDistance > Owner._attackLandDistance)
                 return;
 
-            Owner._player.ApplyDamage(1f, (Owner._player.transform.position - Owner.transform.position).normalized);
+            Owner._player.ApplyDamage(40f, (Owner._player.transform.position - Owner.transform.position).normalized);
             Owner._hitSound.Play(Owner._audioSource);
             Owner._player.ApplyModifier(new HurtModifier(), 0.6f);
         }

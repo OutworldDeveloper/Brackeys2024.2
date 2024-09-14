@@ -9,7 +9,7 @@ public sealed class EbakaStorm : Storm
     [SerializeField] private PlayerCharacter _player;
     [SerializeField] private float _minDuration = 90f;
     [SerializeField] private float _forcedRemovalDelay = 25f;
-    [SerializeField] private LightsController _lightsController;
+    [SerializeField] private Power _lightsController;
 
     private Zombie _zombie;
     private bool _isFinished;

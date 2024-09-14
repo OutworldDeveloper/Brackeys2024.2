@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: AncientCoin
   m_EditorClassIdentifier: 
   <DisplayName>k__BackingField: Ancient coin
-  <Sprite>k__BackingField: {fileID: 21300000, guid: 8c5d4243b5d6ce54f895a48335943c9c,
+  <Sprite>k__BackingField: {fileID: 21300000, guid: 7d69ae446659a754090774e81289426f,
     type: 3}
   <Model>k__BackingField:
-    _asset: {fileID: 4541812123957769469, guid: 2e7179bf23362584c9d244b2fc680d38,
+    _asset: {fileID: 4566225073957763940, guid: 4e8d50b929a563c4da8e3709466562f1,
       type: 3}

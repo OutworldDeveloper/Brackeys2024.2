@@ -6,19 +6,18 @@ using UnityEngine.Rendering.Universal;
 [CustomEditor(typeof(ScreenshotTaker))]
 public sealed class ScreenshotTakerEditor : Editor
 {
-
     public override void OnInspectorGUI()
     {
         base.OnInspectorGUI();
-        if (GUILayout.Button("Go!") == true)
+        if (GUILayout.Button("Go!"))
         {
-            var screenshotTaker = (target as ScreenshotTaker);
+            var screenshotTaker = (ScreenshotTaker)target;
 
             for (int i = 0; i < screenshotTaker.Items.Length; i++)
             {
                 var targetItem = screenshotTaker.Items[i];
 
-                foreach (var item in (target as ScreenshotTaker).Items)
+                foreach (var item in screenshotTaker.Items)
                 {
                     item.SetActive(targetItem == item);
                 }
@@ -32,55 +31,84 @@ public sealed class ScreenshotTakerEditor : Editor
         }
     }
 
-    public static void TakeTransparentScreenshot(Camera cam, int width, int height, string savePath)
+    public static void TakeTransparentScreenshot(Camera mainCam, int width, int height, string savePath)
     {
-        var urpCameraData = cam.GetComponent<UniversalAdditionalCameraData>();
+        // Create black and white cameras
+        var blackCam = CreateCamera(mainCam, Color.black);
+        var whiteCam = CreateCamera(mainCam, Color.white);
 
-        var wasPostprocessing = urpCameraData.renderPostProcessing;
-        var wasTargetTexture = cam.targetTexture;
-        var wasClearFlags = cam.clearFlags;
-        var wasActive = RenderTexture.active;
-
-        var transparentTexture = new Texture2D(width, height, TextureFormat.ARGB32, false);
-        var postprocessTexture = new Texture2D(width, height, TextureFormat.ARGB32, false);
+        // Set up textures
+        var textureBlack = new Texture2D(width, height, TextureFormat.RGB24, false);
+        var textureWhite = new Texture2D(width, height, TextureFormat.RGB24, false);
+        var textureTransparentBackground = new Texture2D(width, height, TextureFormat.ARGB32, false);
         var renderTexture = RenderTexture.GetTemporary(width, height, 24, RenderTextureFormat.ARGB32);
         var grabArea = new Rect(0, 0, width, height);
 
-        RenderTexture.active = renderTexture;
-        cam.targetTexture = renderTexture;
-        cam.clearFlags = CameraClearFlags.SolidColor;
+        // Render black camera
+        RenderCameraToTexture(blackCam, renderTexture, textureBlack, grabArea);
 
-        cam.backgroundColor = Color.clear;
-        urpCameraData.renderPostProcessing = false;
-        cam.Render();
-        transparentTexture.ReadPixels(grabArea, 0, 0);
-        transparentTexture.Apply();
+        // Render white camera
+        RenderCameraToTexture(whiteCam, renderTexture, textureWhite, grabArea);
 
-        urpCameraData.renderPostProcessing = true;
-        cam.Render();
-        postprocessTexture.ReadPixels(grabArea, 0, 0);
-        postprocessTexture.Apply();
+        // Combine textures to calculate alpha
+        CalculateTransparentTexture(textureBlack, textureWhite, textureTransparentBackground);
 
-        var transparentPixels = transparentTexture.GetPixels();
-        var postprocessPixels = transparentTexture.GetPixels();
-
-        for (var i = 0; i < transparentPixels.Length; i++)
-        {
-            //postprocessPixels[i] = postprocessPixels[i].SetAlpha(transparentPixels[i].a);
-        }
-
-        postprocessTexture.SetPixels(postprocessPixels);
-
-        byte[] pngShot = postprocessTexture.EncodeToPNG();
+        // Save PNG
+        byte[] pngShot = textureTransparentBackground.EncodeToPNG();
         File.WriteAllBytes(savePath, pngShot);
 
-        cam.clearFlags = wasClearFlags;
-        cam.targetTexture = wasTargetTexture;
-        urpCameraData.renderPostProcessing = wasPostprocessing;
-        RenderTexture.active = wasActive;
+        // Cleanup
         RenderTexture.ReleaseTemporary(renderTexture);
-        DestroyImmediate(transparentTexture);
-        DestroyImmediate(postprocessTexture);
+        DestroyImmediate(textureBlack);
+        DestroyImmediate(textureWhite);
+        DestroyImmediate(textureTransparentBackground);
+        DestroyImmediate(blackCam.gameObject);
+        DestroyImmediate(whiteCam.gameObject);
     }
 
+    private static Camera CreateCamera(Camera mainCam, Color backgroundColor)
+    {
+        var camObject = new GameObject();
+        var cam = camObject.AddComponent<Camera>();
+        cam.CopyFrom(mainCam);
+        cam.backgroundColor = backgroundColor;
+        cam.clearFlags = CameraClearFlags.SolidColor;
+        camObject.transform.SetParent(mainCam.transform, true);
+        return cam;
+    }
+
+    private static void RenderCameraToTexture(Camera cam, RenderTexture renderTexture, Texture2D texture, Rect grabArea)
+    {
+        cam.targetTexture = renderTexture;
+        cam.Render();
+        RenderTexture.active = renderTexture;
+        texture.ReadPixels(grabArea, 0, 0);
+        texture.Apply();
+        cam.targetTexture = null;
+        RenderTexture.active = null;
+    }
+
+    private static void CalculateTransparentTexture(Texture2D textureBlack, Texture2D textureWhite, Texture2D textureTransparentBackground)
+    {
+        for (int y = 0; y < textureTransparentBackground.height; ++y)
+        {
+            for (int x = 0; x < textureTransparentBackground.width; ++x)
+            {
+                float alpha = textureWhite.GetPixel(x, y).r - textureBlack.GetPixel(x, y).r;
+                alpha = 1.0f - alpha;
+                Color color;
+                if (alpha == 0)
+                {
+                    color = Color.clear;
+                }
+                else
+                {
+                    color = textureBlack.GetPixel(x, y) / alpha;
+                }
+                color.a = alpha;
+                textureTransparentBackground.SetPixel(x, y, color);
+            }
+        }
+        textureTransparentBackground.Apply();
+    }
 }

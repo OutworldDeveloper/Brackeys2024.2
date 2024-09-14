@@ -46,7 +46,7 @@ public sealed class MicrowaveInteraction : Interaction
 
         public override bool CanAccept(Item item)
         {
-            return item.name == Items.RAT_ID;
+            return item.name != Items.COOKED_RAT_ID;
         }
 
         public override void Select(Inventory inventory, Item item)
@@ -57,9 +57,6 @@ public sealed class MicrowaveInteraction : Interaction
 
         public override string GetRejectionReason(Item item)
         {
-            if (item.name == Items.CHEESE_ID)
-                return "I don't need melted cheese";
-
             if (item.name == Items.COOKED_RAT_ID)
                 return "It's already cooked enough";
 

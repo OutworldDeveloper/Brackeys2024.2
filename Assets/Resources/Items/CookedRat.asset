@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: CookedRat
   m_EditorClassIdentifier: 
   <DisplayName>k__BackingField: Cooked rat
-  <Sprite>k__BackingField: {fileID: 21300000, guid: 8ee21d54686783545bd4c0fd4a9ac7fd,
+  <Sprite>k__BackingField: {fileID: 21300000, guid: f927344cdfc7aa04290f2b3da31111c0,
     type: 3}
   <Model>k__BackingField:
-    _asset: {fileID: 558328200895319389, guid: e9a1459b7c085854ba262f737bc7e8b6, type: 3}
+    _asset: {fileID: 2567857782075462455, guid: e8270c81deb8e364d80323644c231264,
+      type: 3}

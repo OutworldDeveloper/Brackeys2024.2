@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c211c119fff06374fb4645d0b8fba733, type: 3}
+  m_Name: BreadStage3
+  m_EditorClassIdentifier: 
+  <DisplayName>k__BackingField: Crumbled bread
+  <Sprite>k__BackingField: {fileID: 21300000, guid: 6344ea89cc1302c43b3686f2f223b1ec,
+    type: 3}
+  <Model>k__BackingField:
+    _asset: {fileID: 4460079910654061686, guid: 43621a02b308f5c41be61522ac6218e4,
+      type: 3}

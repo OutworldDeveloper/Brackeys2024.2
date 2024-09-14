@@ -26,7 +26,7 @@ public sealed class MouseTrapInteraction : Interaction
             return;
         }
 
-        if (_mouseTrap.HasCheese == true)
+        if (_mouseTrap.HasBait == true)
         {
             Notification.Show("Now I just need to wait a little", 2f);
             return;
@@ -52,17 +52,29 @@ public sealed class MouseTrapInteraction : Interaction
 
         public override bool CanAccept(Item item)
         {
-            return item.name == Items.CHEESE_ID;
+            return item.name == "Bread" || item.name == "BreadStage2" || item.name == "BreadStage3";
         }
 
         public override void Select(Inventory inventory, Item item)
         {
+            switch (item.name)
+            {
+                case "Bread":
+                    inventory.AddItem(Items.Get("BreadStage2"), false);
+                    break;
+                case "BreadStage2":
+                    inventory.AddItem(Items.Get("BreadStage3"), false);
+                    break;
+            }
             inventory.RemoveItem(item);
-            _mouseTrap.PlaceCheese();
+            _mouseTrap.PlaceBait();
         }
 
         public override string GetRejectionReason(Item item)
         {
+            if (item.name == Items.RAT_ID || item.name == Items.COOKED_RAT_ID)
+                return "No...";
+
             return "I don't think rats eat that";
         }
 

@@ -244,8 +244,6 @@ public abstract class BasePlayer : MonoBehaviour
             OnActiveStateChanged();
         }
 
-        Debug.Log($"Refreshing view");
-        Debug.Log($"Topmost state is {ActiveGameplay}");
         RefreshView();
     }
 

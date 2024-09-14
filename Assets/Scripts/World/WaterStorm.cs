@@ -7,7 +7,7 @@ public sealed class WaterStorm : Storm
     [SerializeField] private float _raiseDuration = 10f;
     [SerializeField] private float _holdDuration = 5f;
     [SerializeField] private float _returnDuration = 5f;
-    [SerializeField] private LightsController _ligths;
+    [SerializeField] private Power _ligths;
     [SerializeField] private bool _disableLights;
 
     private State _currentState;

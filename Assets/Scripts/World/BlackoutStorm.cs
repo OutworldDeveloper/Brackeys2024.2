@@ -4,7 +4,7 @@ public sealed class BlackoutStorm : Storm
 {
 
     [SerializeField] private float _duration = 10f;
-    [SerializeField] private LightsController _lightController;
+    [SerializeField] private Power _lightController;
 
     protected override void OnStormStarted()
     {

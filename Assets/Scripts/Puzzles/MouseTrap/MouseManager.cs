@@ -34,7 +34,7 @@ public sealed class MouseManager : MonoBehaviour
 
         foreach (var mouseTrap in _mouseTraps)
         {
-            if (mouseTrap.HasCheese == false)
+            if (mouseTrap.HasBait == false)
                 continue;
 
             float distance = Vector3.Distance(mouseTrap.transform.position, _playerCharacter.transform.position);

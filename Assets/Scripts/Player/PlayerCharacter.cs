@@ -433,7 +433,7 @@ public sealed class PlayerCharacter : Pawn
         if (CanRegnerateHealth() == false)
             return;
 
-        Health = Mathf.Min(Health + Time.deltaTime, _maxHealth);
+        Health = Mathf.Min(Health + Time.deltaTime * 5f, _maxHealth);
     }
 
     private void Crouch()
@@ -544,7 +544,7 @@ public sealed class PlayerCharacter : Pawn
 
     public bool CanRegnerateHealth()
     {
-        return IsDead == false && _timeSinceLastDamage > Mathf.Infinity;
+        return IsDead == false && _timeSinceLastDamage > 15f;
     }
 
     private float GetRemappedPerlinNoise1D(float timeMultiplier, float offset)
