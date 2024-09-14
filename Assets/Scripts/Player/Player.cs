@@ -219,7 +219,6 @@ public abstract class BasePlayer : MonoBehaviour
 
     public void DestroyPanel(UI_Panel panel)
     {
-        Debug.Log($"Removing {panel}");
         Remove(panel);
         Destroy(panel.gameObject);
     }

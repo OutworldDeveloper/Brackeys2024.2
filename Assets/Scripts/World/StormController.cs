@@ -38,7 +38,6 @@ public sealed class StormController : MonoBehaviour
         if (_stateSequence.Count == 0)
         {
             _stateSequence = new Queue<IStormState>(GetNextSequence());
-            Notification.ShowDebug($"New sequence: {_stateSequence.Count} elements");
         }
 
         if (State != null)

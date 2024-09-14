@@ -36,6 +36,12 @@ public class Microwave : DoorBlocker
         if (IsOn == false)
             return;
 
+        if (IsInWater() == true)
+        {
+            TurnOff();
+            return;
+        }
+
         if (_timeSinceLastStart < _duration)
             return;
 
@@ -60,6 +66,9 @@ public class Microwave : DoorBlocker
         if (IsOn == true)
             return;
 
+        if (IsInWater() == true)
+            return;
+
         if (_lightController.IsPowerOn == false)
         {
             Notification.Show("No power");
@@ -79,6 +88,11 @@ public class Microwave : DoorBlocker
         _buttonSound.Play(_buttonSource);
 
         _itemPedistal.transform.rotation = Quaternion.Euler(0f, Randomize.Float(0, 360), 0f);
+    }
+
+    public bool IsInWater()
+    {
+        return Water.Level > transform.position.y + 0.2f;
     }
 
     public void TurnOff()

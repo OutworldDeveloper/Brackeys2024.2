@@ -54,8 +54,16 @@ public sealed class TV : MonoBehaviour
 
     private void Update()
     {
-        float desiredVolume = _roomTrigger.PlayerInside == true ? _desiredNoiseVolume : 0f;
-        desiredVolume = _ignoreRoomTrigger == true ? _desiredNoiseVolume : desiredVolume;
+        if (IsOn == true && IsInWater() == true)
+            TurnOff();
+
+        if (IsOn == false && _autoPowerOn == true)
+            TurnOn();
+
+        //float desiredVolume = _roomTrigger.PlayerInside == true ? _desiredNoiseVolume : 0f;
+        //desiredVolume = _ignoreRoomTrigger == true ? _desiredNoiseVolume : desiredVolume;
+
+        float desiredVolume = _desiredNoiseVolume;
 
         if (IsOn == false)
             desiredVolume = 0f;
@@ -97,11 +105,11 @@ public sealed class TV : MonoBehaviour
 
     public void TurnOn()
     {
-        if (_power.IsPowerOn == false)
-        {
-            Notification.Show("No power");
+        if (IsInWater() == true)
             return;
-        }
+
+        if (_power.IsPowerOn == false)
+            return;
 
         if (IsOn == true)
             return;
@@ -125,6 +133,11 @@ public sealed class TV : MonoBehaviour
         GetComponent<MeshRenderer>().sharedMaterial = _offMaterial;
         _currentSequence.Kill();
         _light.enabled = false;
+    }
+
+    public bool IsInWater()
+    {
+        return Water.Level > transform.position.y + 0.2f;
     }
 
     private void OnPowerOutage()

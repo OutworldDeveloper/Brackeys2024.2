@@ -2,7 +2,7 @@
 
 public sealed class MicrowaveInteraction : Interaction
 {
-    public override string Text => _microwave.ContainsItem ? "Take" : "Insert";
+    public override string Text => _microwave.ContainsItem ? "Take" : "Put";
 
     private Microwave _microwave;
 
@@ -27,7 +27,7 @@ public sealed class MicrowaveInteraction : Interaction
         }
 
         if (player.Inventory.IsEmpty)
-            Notification.Show("I have nothing to insert");
+            Notification.Show("I have nothing to put");
         else
             player.Player.OpenPanel(Panels.SelectionScreen).
                 Setup(player.Inventory, new MicrowaveSelector(_microwave)).

@@ -10,6 +10,7 @@ public class ItemPedistal : MonoBehaviour
     public event Action ItemRemoved;
     public event Action Updated;
 
+    public bool ContainsItem => DisplayItem != null;
     public Item DisplayItem { get; private set; }
 
     private ItemModel _model;
