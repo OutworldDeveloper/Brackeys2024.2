@@ -44,6 +44,9 @@ public sealed class PlayerCharacter : Pawn
 
     [SerializeField] private float _maxOxygen = 10f;
 
+    [SerializeField] private GameObject _flashLight; 
+    [SerializeField] private GameObject _weakFlashLight;
+
     private CharacterController _controller;
     private Vector3 _velocityXZ;
     private float _velocityY;
@@ -110,6 +113,20 @@ public sealed class PlayerCharacter : Pawn
         ApplyModifier(new SpawnBlockModifier(), 0.4f);
 
         VirtualCamera.FieldOfView = _fieldOfView;
+    }
+
+    public override void OnReceivePlayerControl()
+    {
+        base.OnReceivePlayerControl();
+        _flashLight.SetActive(true);
+        _weakFlashLight.SetActive(false);
+    }
+
+    public override void OnLostPlayerControl()
+    {
+        base.OnLostPlayerControl();
+        _flashLight.SetActive(false);
+        _weakFlashLight.SetActive(true);
     }
 
     public override void InputTick()

@@ -19,7 +19,7 @@ public class UI_DeathScreen : UI_Panel
 
     public void MenuButton()
     {
-        SceneManager.LoadScene(0);
+        Application.Quit();
     }
 
 }

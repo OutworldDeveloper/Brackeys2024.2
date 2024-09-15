@@ -307,7 +307,7 @@ public class Zombie : MonoBehaviour
 
     private void OnEscapeStart()
     {
-        _actionRunner.Run(new RoarAction());
+        //_actionRunner.Run(new RoarAction());
 
         _escapeLocation = SelectEscapeLocation();
         _agent.SetDestination(_escapeLocation);
@@ -407,7 +407,7 @@ public class Zombie : MonoBehaviour
 
         public override void OnStarted()
         {
-            Owner._animator.Play("roar");
+            //Owner._animator.Play("roar");
             Owner._roarSound.Play(Owner._roarSource);
         }
 

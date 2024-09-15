@@ -5,6 +5,8 @@ public sealed class ColorLockRotator : MonoBehaviour
 {
 
     [SerializeField] private int _requiredDigit;
+    [SerializeField] private int _digitsCount = 5;
+    [SerializeField] private AudioSource _rotationAudio;
 
     public int CurrentDigit { get; private set; }
     public bool IsRightDigit => CurrentDigit == _requiredDigit;
@@ -19,7 +21,7 @@ public sealed class ColorLockRotator : MonoBehaviour
         CurrentDigit--;
 
         if (CurrentDigit < 0)
-            CurrentDigit = 9;
+            CurrentDigit = _digitsCount;
 
         OnDigitUpdated(true);
     }
@@ -28,7 +30,7 @@ public sealed class ColorLockRotator : MonoBehaviour
     {
         CurrentDigit++;
 
-        if (CurrentDigit > 9)
+        if (CurrentDigit > _digitsCount)
             CurrentDigit = 0;
 
         OnDigitUpdated(true);
@@ -47,13 +49,16 @@ public sealed class ColorLockRotator : MonoBehaviour
 
     private void OnDigitUpdated(bool animate)
     {
-        float targetAngle = CurrentDigit * 36f;
+        float targetAngle = CurrentDigit * 60f;
         Vector3 targetEuler = new Vector3(targetAngle, 0f, 0f);
 
         if (animate == true)
             transform.DOLocalRotate(targetEuler, 0.2f);
         else
             transform.localEulerAngles = targetEuler;
+
+        if (animate)
+            _rotationAudio.Play();
     }
 
 }

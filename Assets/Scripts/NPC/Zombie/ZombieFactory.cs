@@ -13,10 +13,10 @@ public sealed class ZombieFactory : MonoBehaviour
         _locations = FindObjectsOfType<LocationInfo>();
     }
 
-    public Zombie Spawn(Vector3 location, Vector3 direction)
+    public Zombie Spawn(Vector3 location)
     {
-        var zombie = _prefab.Instantiate(location, Quaternion.LookRotation(direction, Vector3.up));
-        zombie.Warp(location, direction);
+        var zombie = _prefab.Instantiate(location, Quaternion.identity);
+        //zombie.Warp(location, direction);
         zombie.Setup(_playerCharacter, _locations);
         return zombie;
     }

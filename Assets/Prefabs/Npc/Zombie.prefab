@@ -464,7 +464,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  _timeToLostTarget: 2
+  _timeToLostTarget: 0.9
 --- !u!82 &7712540048495256083
 AudioSource:
   m_ObjectHideFlags: 0
@@ -574,7 +574,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _radius: 8
-  _detectRadius: 2
+  _detectRadius: 1.72
   _angle: 115.5
   _occlusionLayers:
     serializedVersion: 2

@@ -33,8 +33,17 @@ public class UI_YesNoWindow : UI_Panel
 
         _cancelButton.gameObject.SetActive(cancelButton);
 
-        _canClose = cancelButton;
+        return this;
+    }
+    public UI_YesNoWindow SetClosability(bool closable)
+    {
+        _canClose = closable;
+        return this;
+    }
 
+    public UI_YesNoWindow SetYesLabel(string label)
+    {
+        _confirmButton.GetComponentInChildren<TextMeshProUGUI>().text = label;
         return this;
     }
 
@@ -52,7 +61,7 @@ public class UI_YesNoWindow : UI_Panel
 
     public override bool CanRemoveAtWill()
     {
-        return true;
+        return _canClose;
     }
 
 }

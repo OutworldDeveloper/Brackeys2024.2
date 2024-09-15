@@ -39,4 +39,9 @@ public sealed class UI_PauseMenu : UI_Panel
         Player.OpenPanel(_settingsPanel);
     }
 
+    public void ExitButton()
+    {
+        Application.Quit();
+    }
+
 }

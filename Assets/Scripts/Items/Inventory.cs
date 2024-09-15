@@ -26,6 +26,17 @@ public class Inventory : MonoBehaviour, IEnumerable<Item>
         return false;
     }
 
+    public bool HasItem(string name)
+    {
+        foreach (var checkItem in _items)
+        {
+            if (checkItem.name == name)
+                return true;
+        }
+
+        return false;
+    }
+
     public void AddItem(Item item, bool anounce = true)
     {
         _items.Add(item);

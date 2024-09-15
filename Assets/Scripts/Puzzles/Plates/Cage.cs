@@ -4,8 +4,7 @@ public sealed class Cage : MonoBehaviour
 {
 
     [SerializeField] private Collider _collider;
-    [SerializeField] private AudioSource _audioSource;
-    [SerializeField] private Sound _openSound;
+    [SerializeField] private Door _door;
 
     public bool IsOpen { get; private set; }
 
@@ -16,7 +15,7 @@ public sealed class Cage : MonoBehaviour
 
         IsOpen = true;
         _collider.enabled = false;
-        _openSound.Play(_audioSource);
+        _door.Open();
     }
 
 }

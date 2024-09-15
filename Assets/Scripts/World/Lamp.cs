@@ -6,9 +6,11 @@ public class Lamp : MonoBehaviour
     [SerializeField] private Light _lightSource;
     [SerializeField] private Material _disabledMaterial;
     [SerializeField] private Renderer _renderer;
-    [SerializeField] private bool _disabledDuringBlackout ;
+    [SerializeField] private bool _invert;
+    [SerializeField] private bool _ignore;
 
-    public bool DisabledDuringBlackout => _disabledDuringBlackout;
+    public bool Ignore => _ignore;
+    public bool IsInverted => _invert;
 
     private Material _defaultMaterial;
 

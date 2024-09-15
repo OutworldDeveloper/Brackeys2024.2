@@ -1120,7 +1120,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1af64c83d9713014e8e1cd939d7a1355, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _verb: Insert
   _pedistal: {fileID: 6449591947453868003}
+  _mode: 0
   _allowedItems:
   - {fileID: 11400000, guid: 9c358685ffec4ed4a9a950346ff3fdbb, type: 2}
   _virtualCamera: {fileID: 8164453253893943017}
@@ -1149,6 +1151,7 @@ GameObject:
   - component: {fileID: 2087333954650033622}
   - component: {fileID: 7255091299603940304}
   - component: {fileID: 7660257378211210575}
+  - component: {fileID: 528830640343258245}
   m_Layer: 0
   m_Name: Coffin
   m_TagString: Untagged
@@ -1288,6 +1291,25 @@ MonoBehaviour:
   _itemPedistal: {fileID: 6449591947453868003}
   _useCustomText: 1
   _customText: Locked
+--- !u!114 &528830640343258245
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8232026664545337145}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_OverrideArea: 1
+  m_Area: 1
+  m_OverrideGenerateLinks: 0
+  m_GenerateLinks: 0
+  m_IgnoreFromBuild: 0
+  m_ApplyToChildren: 1
+  m_AffectedAgents: ffffffff
 --- !u!1 &8752508316034891212
 GameObject:
   m_ObjectHideFlags: 0

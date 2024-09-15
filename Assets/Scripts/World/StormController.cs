@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using static UnityEngine.CullingGroup;
 
 public sealed class StormController : MonoBehaviour
 {
@@ -13,10 +14,10 @@ public sealed class StormController : MonoBehaviour
     [SerializeField] private Siren _siren;
     [SerializeField] private PlayerTrigger _startRoomTrigger;
 
-    public IStormState State { get; private set; }
+    public IGameState State { get; private set; }
     public TimeSince TimeSinceLastStateStarted { get; private set; }
 
-    private Queue<IStormState> _stateSequence = new Queue<IStormState>();
+    private Queue<IGameState> _stateSequence = new Queue<IGameState>();
 
     private bool _isFirstSequence = true;
 
@@ -37,7 +38,7 @@ public sealed class StormController : MonoBehaviour
     {
         if (_stateSequence.Count == 0)
         {
-            _stateSequence = new Queue<IStormState>(GetNextSequence());
+            _stateSequence = new Queue<IGameState>(GetNextSequence());
         }
 
         if (State != null)
@@ -50,7 +51,7 @@ public sealed class StormController : MonoBehaviour
         StateChanged?.Invoke();
     }
 
-    public IEnumerable<IStormState> GetNextSequence()
+    public IEnumerable<IGameState> GetNextSequence()
     {
         if (_isFirstSequence)
         {
@@ -62,13 +63,13 @@ public sealed class StormController : MonoBehaviour
         yield return new DelayState(4f, false);
         yield return new SirenState(_siren, 8f);
         yield return new DelayState(4f, false);
-        yield return new StormState(_stormPicker.GetNextStorm());
+        yield return new StormingState(_stormPicker.GetNextStorm());
         yield return new DelayState(6f, false);
     }
 
 }
 
-public abstract class IStormState
+public abstract class IGameState
 {
     public virtual bool IsMusicAllowed => false;
     public abstract bool Update(TimeSince timeSinceStart);
@@ -77,7 +78,7 @@ public abstract class IStormState
 
 }
 
-public sealed class WaitForPlayerToMoveState : IStormState
+public sealed class WaitForPlayerToMoveState : IGameState
 {
 
     private PlayerTrigger _trigger;
@@ -96,7 +97,7 @@ public sealed class WaitForPlayerToMoveState : IStormState
 
 }
 
-public sealed class DelayState : IStormState
+public sealed class DelayState : IGameState
 {
     public override bool IsMusicAllowed { get; }
     public float Duration { get; }
@@ -114,11 +115,11 @@ public sealed class DelayState : IStormState
 
 }
 
-public sealed class StormState : IStormState
+public sealed class StormingState : IGameState
 {
     public Storm Storm { get; }
 
-    public StormState(Storm storm)
+    public StormingState(Storm storm)
     {
         Storm = storm;
     }
@@ -141,7 +142,7 @@ public sealed class StormState : IStormState
 
 }
 
-public sealed class SirenState : IStormState
+public sealed class SirenState : IGameState
 {
 
     private readonly Siren _siren;
@@ -178,15 +179,85 @@ public abstract class StormPicker : MonoBehaviour
 
 public abstract class Storm : MonoBehaviour
 {
-    protected TimeSince TimeSinceStarted { get; private set; }
+    protected TimeSince SinceStormStarted { get; private set; }
+    protected TimeSince SinceStateStarted { get; private set; }
+
+    private Queue<StormState> _sequence;
+    private StormState _currentState;
 
     public void BeginStorm() 
     {
-        TimeSinceStarted = new TimeSince(Time.time);
-        OnStormStarted();
+        SinceStormStarted = new TimeSince(Time.time);
+        _sequence = new Queue<StormState>(CreateSequence());
     }
 
-    protected virtual void OnStormStarted() { }
-    public abstract bool UpdateStorm();
+    public bool UpdateStorm()
+    {
+        if (_currentState == null)
+        {
+            if (_sequence.Count == 0)
+                return true;
+
+            _currentState = _sequence.Dequeue();
+            SinceStateStarted = TimeSince.Now();
+            _currentState.OnStarted();
+        }
+
+        bool isFinished = _currentState.Update(SinceStateStarted);
+
+        if (isFinished == true)
+        {
+            _currentState.OnFinished();
+            _currentState = null;
+        }
+
+        return false;
+    }
+
+    protected abstract IEnumerable<StormState> CreateSequence();
+
+}
+
+public abstract class StormState
+{
+    public virtual bool KillLights => false;
+    public abstract bool Update(TimeSince sinceStart);
+    public virtual void OnStarted() { }
+    public virtual void OnFinished() { }
+
+}
+
+public sealed class WaitState : StormState
+{
+
+    private readonly float _duration;
+
+    public WaitState(float duration)
+    {
+        _duration = duration;
+    }
+
+    public override bool Update(TimeSince sinceStart)
+    {
+        return sinceStart > _duration;
+    }
+
+}
+
+public sealed class ActionState : StormState
+{
+
+    private readonly Action _action;
+
+    public ActionState(Action action)
+    {
+        _action = action;
+    }
+
+    public override bool Update(TimeSince sinceStart)
+    {
+        _action();
+        return true;
+    }
 
 }

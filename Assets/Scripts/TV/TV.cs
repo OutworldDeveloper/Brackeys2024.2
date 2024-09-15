@@ -25,12 +25,11 @@ public sealed class TV : MonoBehaviour
     [SerializeField] private bool _ignoreRoomTrigger;
     [SerializeField] private Power _power;
 
-    [SerializeField] private bool _autoPowerOn;
-
     [SerializeField] private Light _light;
 
     public bool IsPlayingSequence { get; private set; }
     public bool IsOn { get; private set; }
+    public bool ContainsCassete { get; private set; }
 
     private float _desiredNoiseVolume = 0f;
     private Sequence _currentSequence;
@@ -45,23 +44,13 @@ public sealed class TV : MonoBehaviour
     {
         _material.SetFloat(_noiseMultiplierID, 1f);
         _desiredNoiseVolume = 1f;
-
-        if (_autoPowerOn)
-            TurnOn();
-        else
-            TurnOff();
+        TurnOff();
     }
 
     private void Update()
     {
         if (IsOn == true && IsInWater() == true)
             TurnOff();
-
-        if (IsOn == false && _autoPowerOn == true)
-            TurnOn();
-
-        //float desiredVolume = _roomTrigger.PlayerInside == true ? _desiredNoiseVolume : 0f;
-        //desiredVolume = _ignoreRoomTrigger == true ? _desiredNoiseVolume : desiredVolume;
 
         float desiredVolume = _desiredNoiseVolume;
 
@@ -78,9 +67,17 @@ public sealed class TV : MonoBehaviour
         }
     }
 
-    public void StartSequence()
+    public void InsertCassete()
+    {
+        ContainsCassete = true;
+    }
+
+    public void PlaySequence(bool playSound = true)
     {
         if (IsOn == false)
+            return;
+
+        if (ContainsCassete == false)
             return;
 
         if (IsPlayingSequence == true)
@@ -99,8 +96,11 @@ public sealed class TV : MonoBehaviour
         sequence.OnComplete(() => 
         {
             IsPlayingSequence = false;
-            StartSequence();
+            PlaySequence(false);
         });
+
+        if (playSound)
+            _startSound.Play(_startAudioSource);
     }
 
     public void TurnOn()
@@ -123,7 +123,7 @@ public sealed class TV : MonoBehaviour
 
         _light.enabled = true;
 
-        StartSequence();
+        PlaySequence();
     }
 
     public void TurnOff()
@@ -133,6 +133,8 @@ public sealed class TV : MonoBehaviour
         GetComponent<MeshRenderer>().sharedMaterial = _offMaterial;
         _currentSequence.Kill();
         _light.enabled = false;
+        _desiredNoiseVolume = 0f;
+        _staticNoiseSource.volume = 0f;
     }
 
     public bool IsInWater()
@@ -145,11 +147,7 @@ public sealed class TV : MonoBehaviour
         TurnOff();
     }
 
-    private void OnPowerRestored()
-    {
-        if (_autoPowerOn)
-            TurnOn();
-    }
+    private void OnPowerRestored() { }
 
     private Sequence Show(Texture2D texture) =>
         DOTween.Sequence(gameObject).

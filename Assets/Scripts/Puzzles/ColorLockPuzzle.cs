@@ -10,7 +10,8 @@ public class ColorLockPuzzle : Pawn
     [SerializeField] private ColorLockRotator[] _rotators;
     [SerializeField] private Material _defaultMaterial;
     [SerializeField] private Material _selectedMaterial;
-    [SerializeField] private MoviePawn _successPawn;
+    [SerializeField] private GameObject _light;
+    [SerializeField] private AudioSource _changeSource;
 
     private int _selectedRotator;
     private TimeUntil _timeUntilInputAvaliable;
@@ -18,10 +19,9 @@ public class ColorLockPuzzle : Pawn
     private void Start()
     {
         _door.Block();
-        RegisterAction(new PawnAction("Select color", KeyCode.W, KeyCode.S));
-        RegisterAction(new PawnAction("Select number", KeyCode.A, KeyCode.D));
+        RegisterAction(new PawnAction("Select", KeyCode.A, KeyCode.D));
+        RegisterAction(new PawnAction("Rotate", KeyCode.W, KeyCode.S));
         RegisterAction(new PawnAction("Submit", KeyCode.F));
-        RegisterAction(new PawnAction("Back", KeyCode.Escape));
     }
 
     public override void OnReceivePlayerControl()
@@ -29,12 +29,14 @@ public class ColorLockPuzzle : Pawn
         base.OnReceivePlayerControl();
         _selectedRotator = _rotators.Length - 1;
         _rotators[_selectedRotator].SetMaterial(_selectedMaterial);
+        _light.SetActive(true);
     }
 
     public override void OnLostPlayerControl()
     {
         base.OnLostPlayerControl();
         _rotators[_selectedRotator].SetMaterial(_defaultMaterial);
+        _light.SetActive(false);
     }
 
     public override void InputTick()
@@ -44,10 +46,10 @@ public class ColorLockPuzzle : Pawn
 
         int previousSelectedRotator = _selectedRotator;
 
-        if (Input.GetKeyDown(KeyCode.S) == true)
+        if (Input.GetKeyDown(KeyCode.A) == true)
             _selectedRotator--;
 
-        if (Input.GetKeyDown(KeyCode.W) == true)
+        if (Input.GetKeyDown(KeyCode.D) == true)
             _selectedRotator++;
 
         if (_selectedRotator < 0)
@@ -56,15 +58,15 @@ public class ColorLockPuzzle : Pawn
         if (_selectedRotator == _rotators.Length)
             _selectedRotator = _rotators.Length - 1;
 
-        if (Input.GetKeyDown(KeyCode.A) == true)
+        if (Input.GetKeyDown(KeyCode.W) == true)
         {
-            _rotators[_selectedRotator].RotateUp();
+            _rotators[_selectedRotator].RotateDown();
             BlockInputFor(0.2f);
         }
 
-        if (Input.GetKeyDown(KeyCode.D) == true)
+        if (Input.GetKeyDown(KeyCode.S) == true)
         {
-            _rotators[_selectedRotator].RotateDown();
+            _rotators[_selectedRotator].RotateUp();
             BlockInputFor(0.2f);
         }
 
@@ -107,14 +109,17 @@ public class ColorLockPuzzle : Pawn
 
         _door.Unblock();
         _door.TryOpen();
-        Player.AddPawn(_successPawn);
         RemoveFromStack();
+
+        gameObject.SetActive(false);
     }
 
     private void OnRotatorSelectionChanged(int previous, int current)
     {
         _rotators[previous].SetMaterial(_defaultMaterial);
         _rotators[current].SetMaterial(_selectedMaterial);
+
+        _changeSource.Play();
     }
 
 }

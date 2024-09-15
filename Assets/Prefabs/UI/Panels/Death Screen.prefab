@@ -348,9 +348,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'Main Menu
-
-'
+  m_text: Exit
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: addd90bb77eb1be4ba624d1b50627df9, type: 2}
   m_sharedMaterial: {fileID: -3377473930934898274, guid: addd90bb77eb1be4ba624d1b50627df9,
@@ -888,8 +886,9 @@ GameObject:
   - component: {fileID: 5816436274615373512}
   - component: {fileID: 8334452119413391724}
   - component: {fileID: 7351371681571213470}
+  - component: {fileID: 3674465197509321455}
   m_Layer: 5
-  m_Name: Button Menu
+  m_Name: Button Exit
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1000,6 +999,18 @@ MonoBehaviour:
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
+--- !u!114 &3674465197509321455
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7477071417643824921}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b6f1b3da7d41da4285bb49bf4566eb2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &8128315727172820416
 GameObject:
   m_ObjectHideFlags: 0
