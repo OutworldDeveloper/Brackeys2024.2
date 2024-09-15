@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 020aed4b85fabf440bacaff1db3c94a5, type: 3}
   m_Name: Sounds Volume
   m_EditorClassIdentifier: 
-  defaultValue: 0.25
+  defaultValue: 0.5
   <MinValue>k__BackingField: 0.001
   <MaxValue>k__BackingField: 1

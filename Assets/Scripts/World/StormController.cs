@@ -1,8 +1,6 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using static UnityEngine.CullingGroup;
 
 public sealed class StormController : MonoBehaviour
 {
@@ -10,6 +8,7 @@ public sealed class StormController : MonoBehaviour
     public event Action StateChanged;
 
     [SerializeField] private StormPicker _stormPicker;
+    [SerializeField] private MinMax<float> _firstStormDelay = new(40, 60);
     [SerializeField] private MinMax<float> _stormDelay = new(40, 60);
     [SerializeField] private Siren _siren;
     [SerializeField] private PlayerTrigger _startRoomTrigger;
@@ -59,7 +58,8 @@ public sealed class StormController : MonoBehaviour
             _isFirstSequence = false;
         }
 
-        yield return new DelayState(Randomize.Float(_stormDelay), true);
+        float delay = Randomize.Float(_isFirstSequence ? _firstStormDelay : _stormDelay);
+        yield return new DelayState(delay, true);
         yield return new DelayState(4f, false);
         yield return new SirenState(_siren, 8f);
         yield return new DelayState(4f, false);

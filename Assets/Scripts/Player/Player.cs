@@ -7,6 +7,7 @@ public sealed class Player : BasePlayer
 {
 
     public static bool IsFirstTime = true;
+    public static bool ShowedSwimmingTutorial = false;
 
     [SerializeField] private PlayerCharacter _character;
     [SerializeField] private GameObject _hud;
@@ -17,6 +18,16 @@ public sealed class Player : BasePlayer
     {
         _character.Damaged += OnCharacterDamaged;
         _character.Died += OnCharacterDied;
+        _character.InWater += OnCharacterInWater;
+    }
+
+    private void OnCharacterInWater()
+    {
+        if (ShowedSwimmingTutorial == true)
+            return;
+
+        ShowedSwimmingTutorial = true;
+        new Notification(4f).Append("Press").Append(KeyCode.Space, KeyCode.LeftShift).Append("to swim!").Show();
     }
 
     protected override void Start()
@@ -28,10 +39,17 @@ public sealed class Player : BasePlayer
 
         IsFirstTime = false;
 
-        OpenPanel(Panels.ConfirmationScreen).
-            Setup("Hello", 
-            "Please use Tab instead of Esc to pause since it's a WebGL game. Use Shift to sneak.", 
-            () => { }, false);
+        if (Application.platform == RuntimePlatform.WebGLPlayer)
+        {
+            OpenPanel(Panels.ConfirmationScreen).
+                Setup("Hello",
+                "Please use Tab instead of Esc to pause, as this is a WebGL game. Use Shift to sneak. If you encounter any bugs, consider downloading the executable version.",
+                () => { }, false);
+        }
+        else
+        {
+            new Notification(6f).Append("Use").Append(KeyCode.LeftShift).Append(" to sneak").Show();
+        }
     }
 
     protected override GameplayState GetDefaultState()

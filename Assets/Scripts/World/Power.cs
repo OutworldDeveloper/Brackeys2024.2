@@ -40,6 +40,7 @@ public class Power : MonoBehaviour
             Delayed.Do(() => Notification.Show("I need to restore power", 3f), 1f);
     }
 
+    [ContextMenu("Turn on")]
     public void TurnOn()
     {
         IsPowerOn = true;

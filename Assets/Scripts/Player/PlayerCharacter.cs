@@ -9,6 +9,7 @@ public sealed class PlayerCharacter : Pawn
 
     public event Action Damaged;
     public event Action Died;
+    public event Action InWater;
 
     [SerializeField] private Transform _head;
     [SerializeField] private PlayerInteraction _interactor;
@@ -44,8 +45,9 @@ public sealed class PlayerCharacter : Pawn
 
     [SerializeField] private float _maxOxygen = 10f;
 
-    [SerializeField] private GameObject _flashLight; 
-    [SerializeField] private GameObject _weakFlashLight;
+    [SerializeField] private GameObject _flashLight;
+
+    [SerializeField] private bool _antiFlicks;
 
     private CharacterController _controller;
     private Vector3 _velocityXZ;
@@ -119,14 +121,20 @@ public sealed class PlayerCharacter : Pawn
     {
         base.OnReceivePlayerControl();
         _flashLight.SetActive(true);
-        _weakFlashLight.SetActive(false);
     }
 
     public override void OnLostPlayerControl()
     {
         base.OnLostPlayerControl();
-        _flashLight.SetActive(false);
-        _weakFlashLight.SetActive(true);
+
+        // Wtf :)
+        Delayed.Do(() =>
+        {
+            if (Player.ActiveGameplay is ColorLockPuzzle)
+            {
+                _flashLight.SetActive(false);
+            }
+        }, 0f);
     }
 
     public override void InputTick()
@@ -174,8 +182,12 @@ public sealed class PlayerCharacter : Pawn
         // Splashes
         var isInWater = IsInWater();
 
-        if (_wasInWater == false && isInWater == true && _velocityY < -5f)
-            _splashSound.Play(_stepSource);
+        if (_wasInWater == false && isInWater == true)
+        {
+            InWater?.Invoke();
+            if (_velocityY < -5f)
+                _splashSound.Play(_stepSource);
+        } 
 
         _wasInWater = isInWater;
 
@@ -334,8 +346,11 @@ public sealed class PlayerCharacter : Pawn
     {
         var playerInput = new PlayerInput();
 
-        playerInput.MouseX = RemoveFlicks(Input.GetAxisRaw("Mouse X")) * _mouseSensitivity.Value;
-        playerInput.MouseY = RemoveFlicks(Input.GetAxisRaw("Mouse Y")) * _mouseSensitivity.Value;
+        var x = Input.GetAxis("Mouse X");
+        var y = Input.GetAxis("Mouse Y");
+
+        playerInput.MouseX = x * _mouseSensitivity.Value;
+        playerInput.MouseY = y * _mouseSensitivity.Value;
 
         playerInput.Direction = new FlatVector()
         {
@@ -571,13 +586,22 @@ public sealed class PlayerCharacter : Pawn
 
     private const float WEBGL_ANTI_FLICKS_THRESHOLD = 90f;
     private float prevDeltaX;
+    private float prevDeltaY;
 
-    private float RemoveFlicks(float currentDeltaX)
+    private float RemoveFlicksX(float currentDeltaX)
     {
         if (Mathf.Abs(currentDeltaX - prevDeltaX) > WEBGL_ANTI_FLICKS_THRESHOLD)
             return prevDeltaX;
         prevDeltaX = currentDeltaX;
         return currentDeltaX;
+    }
+
+    private float RemoveFlicksY(float currentDeltaY)
+    {
+        if (Mathf.Abs(currentDeltaY - prevDeltaY) > WEBGL_ANTI_FLICKS_THRESHOLD)
+            return prevDeltaY;
+        prevDeltaY = currentDeltaY;
+        return currentDeltaY;
     }
 
     private struct PlayerInput
