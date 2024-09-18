@@ -23786,6 +23786,16 @@ PrefabInstance:
       propertyPath: m_Name
       value: Coffin
       objectReference: {fileID: 0}
+    - target: {fileID: 1354468835588594619, guid: 4242b3bb61b500e40accd5c1e4536a16,
+        type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: ceac7f63de65df640928afd57b4cd6cb, type: 2}
+    - target: {fileID: 2583702789889782404, guid: 4242b3bb61b500e40accd5c1e4536a16,
+        type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: ceac7f63de65df640928afd57b4cd6cb, type: 2}
     - target: {fileID: 4451077135830848424, guid: 4242b3bb61b500e40accd5c1e4536a16,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -23836,6 +23846,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8480919269556435339, guid: 4242b3bb61b500e40accd5c1e4536a16,
+        type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: ceac7f63de65df640928afd57b4cd6cb, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

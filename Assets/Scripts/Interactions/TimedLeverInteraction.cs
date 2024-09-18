@@ -32,10 +32,11 @@ public sealed class TimedLeverInteraction : Interaction
             return;
         }
 
-        player.Player.OpenPanel(Panels.ConfirmationScreen).
-            Setup("Tutorial", TUTORIAL_TEXT, () => { }, false).
-            SetClosability(true).
-            SetYesLabel("Ok");
+        player.Player.OpenPanel(Panels.GenericMenu).
+            WithLabel("Tutorial").
+            WithDescription(TUTORIAL_TEXT).
+            WithCloseButton("Ok").
+            WithClosability(true);
 
         HasInspected = true;
     }

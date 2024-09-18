@@ -33,7 +33,7 @@ public class MoviePawn : Pawn
 
     private void Update()
     {
-        if (IsPossesed == false)
+        if (IsActive == false)
             return;
 
         if (_timeUntilUnpossess > 0f)

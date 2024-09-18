@@ -52,11 +52,11 @@ public class Finale : MonoBehaviour
 
     private void OpenThxScreen(BasePlayer player)
     {
-        player.OpenPanel(Panels.ConfirmationScreen).
-            Setup("Finish", "Thank you for playing and completing our game!", () =>
-            { SceneManager.LoadScene(SceneManager.GetActiveScene().name); }, false).
-            SetYesLabel("Ok").
-            SetClosability(false);
+        player.OpenPanel(Panels.GenericMenu).
+            WithLabel("Finish").
+            WithDescription("Thank you for playing and completing our game!").
+            WithButton("Ok", () => SceneManager.LoadScene(SceneManager.GetActiveScene().name)).
+            WithClosability(false);
     }
 
     private sealed class FinaleBlockModifier : CharacterModifier

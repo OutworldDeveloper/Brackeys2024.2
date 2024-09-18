@@ -48,26 +48,25 @@ public sealed class ProgrammablePicker : StormPicker
     private IStormPicker CreateMainLoopPicker()
     {
         var weightedPicker = new WeightedRandomPicker();
-        weightedPicker.Add(new SinglePicker(_waterStorm), 1f);
-        weightedPicker.Add(CreateDarknessStormPicker(), 2f);
+        weightedPicker.Append(new SinglePicker(_waterStorm), 1f);
+        weightedPicker.Append(CreateDarknessStormPicker(), 2f);
         return weightedPicker;
     }
 
     private IStormPicker CreateWaterStormPicker()
     {
         var weightedPicker = new WeightedRandomPicker();
-        weightedPicker.Add(new SinglePicker(_waterStorm), 1.4f);
-        weightedPicker.Add(new SinglePicker(_lightWaterStorm), 1f);
+        weightedPicker.Append(new SinglePicker(_waterStorm), 1.4f);
+        weightedPicker.Append(new SinglePicker(_lightWaterStorm), 1f);
         return weightedPicker;
     }
 
     private IStormPicker CreateDarknessStormPicker()
     {
-        var weightedPicker = new WeightedRandomPicker();
-        weightedPicker.Add(new SinglePicker(_blackoutStorm), 0.6f);
-        weightedPicker.Add(new SinglePicker(_ebakaStorm), 1.5f);
-        weightedPicker.Add(new SinglePicker(_statueStorm), 0.2f);
-        return weightedPicker;
+        return new WeightedRandomPicker()
+            .Append(new SinglePicker(_blackoutStorm), 0.6f)
+            .Append(new SinglePicker(_ebakaStorm), 1.5f)
+            .Append(new SinglePicker(_statueStorm), 0.2f);
     }
 
 }
@@ -164,9 +163,10 @@ public sealed class WeightedRandomPicker : IStormPicker
 
     private readonly WeightedRandom<IStormPicker> _options = new WeightedRandom<IStormPicker>(10);
 
-    public void Add(IStormPicker picker, float weight)
+    public WeightedRandomPicker Append(IStormPicker picker, float weight)
     {
         _options.Add(picker, weight);
+        return this;
     }
 
     public Storm GetNextStorm()

@@ -7,7 +7,7 @@ using UnityEngine;
 public class UI_PawnActionsGuide : MonoBehaviour
 {
 
-    [SerializeField] private Player _player;
+    [SerializeField] private BasePlayer _player;
     [SerializeField] private Prefab<UI_PawnAction> _displayPrefab;
     [SerializeField] private Transform _parent;
 
@@ -21,11 +21,12 @@ public class UI_PawnActionsGuide : MonoBehaviour
 
     private PawnAction _closePanelAction = new PawnAction("Back", KeyCode.Tab);
 
-    private void Refresh(GameplayState active)
+    private void Refresh(Option<GameplayState> active)
     {
         ClearDisplays();
         _parent.gameObject.SetActive(false);
 
+        /*
         if (_player.ActiveGameplay.CanRemoveAtWill() && _player.IsStackEmpty == false)
         {
             var display = _displayPrefab.Instantiate();
@@ -49,6 +50,7 @@ public class UI_PawnActionsGuide : MonoBehaviour
 
             _currentDisplays.Add(display);
         }
+        */
     }
 
     private void ClearDisplays()

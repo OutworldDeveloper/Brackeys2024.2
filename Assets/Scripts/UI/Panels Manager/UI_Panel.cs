@@ -20,7 +20,7 @@ public class UI_Panel : GameplayState
 
     public void CloseAndDestroy()
     {
-        Player.DestroyPanel(this);
+        Player.RemoveAndDestroyPanel(this);
     }
 
     public void SetVirtualCamera(VirtualCamera camera, CameraTransition transition)

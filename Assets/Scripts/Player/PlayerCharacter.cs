@@ -126,15 +126,6 @@ public sealed class PlayerCharacter : Pawn
     public override void OnLostPlayerControl()
     {
         base.OnLostPlayerControl();
-
-        // Wtf :)
-        Delayed.Do(() =>
-        {
-            if (Player.ActiveGameplay is ColorLockPuzzle)
-            {
-                _flashLight.SetActive(false);
-            }
-        }, 0f);
     }
 
     public override void InputTick()

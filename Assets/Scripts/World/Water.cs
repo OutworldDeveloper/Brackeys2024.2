@@ -37,3 +37,18 @@ public abstract class Singleton<T> : MonoBehaviour where T : Singleton<T>
     }
 
 }
+
+public abstract class PersistentSingleton<T> : MonoBehaviour where T : PersistentSingleton<T>
+{
+    public static T Instance { get; private set; }
+
+    protected virtual void Awake()
+    {
+        if (Instance != null)
+            throw new Exception($"There is more than one singleton of type {nameof(T)} present on the scene!");
+        Instance = this as T;
+        DontDestroyOnLoad(Instance);
+    }
+
+
+}
